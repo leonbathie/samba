@@ -369,7 +369,7 @@ export class Npc implements Interactable {
   }
 
   label(): string {
-    return t('prompt.talk');
+    return t(this.def.prompt ?? 'prompt.talk');
   }
 
   available(): boolean {

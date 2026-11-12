@@ -64,7 +64,7 @@ export abstract class Enemy {
   private alert: THREE.Mesh;
   private alertOn = false;
   private fleeT = 0;
-  private fleeDir = 1;
+  private fleeDir: 1 | -1 = 1;
   private opacity = 1;
   protected yOff = 0;
   protected tilt = 0;
@@ -97,6 +97,10 @@ export abstract class Enemy {
   /** Vrai si l'animal menace le héros (sert à l'amie et à l'aide à la visée). */
   get threatening(): boolean {
     return this.alive && !this.gone;
+  }
+
+  get isStunned(): boolean {
+    return this.stunT > 0;
   }
 
   protected setState(s: string): void {
@@ -168,7 +172,7 @@ export abstract class Enemy {
       b.x += this.fleeDir * 8 * dt;
       if (this.kind === 'singe') b.y += 6 * dt;
       this.opacity = clamp(this.fleeT / 0.6, 0, 1);
-      this.view.setPose(this.kind === 'singe' ? 'move' : 'move');
+      this.view.setPose('move');
       if (this.fleeT <= 0) this.alive = false;
     } else if (this.stunT > 0) {
       this.stunT -= dt;

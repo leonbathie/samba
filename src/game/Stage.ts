@@ -9,7 +9,7 @@ import type { Solid } from './physics';
 import { Player } from './Player';
 import { Checkpoint, Chest, Companion, Door, type Interactable, Npc, Pickup, Projectile, type ProjectileSpec, Target } from './entities';
 import { createEnemy, type Enemy } from './enemies';
-import { Backdrop, makeEarth, makeWater, makeWaterfall } from '../render/scenery';
+import { Backdrop, makeEarth, makeTrunk, makeWater, makeWaterfall } from '../render/scenery';
 import { glowSprite, imageSprite, makeSprite, Particles, QUAD } from '../render/sprites';
 import { clamp, damp, rng } from '../core/math';
 import { t } from '../i18n';
@@ -164,6 +164,7 @@ export class Stage {
       this.root.add(this.backdrop.mesh);
     }
 
+    for (const tr of def.trunks) this.root.add(makeTrunk(tr.x, tr.w, tr.y0, tr.y1, a.tex('tex/ecorce'), this.lightColor));
     for (const s of def.solids) this.addSolid(s);
     for (const m of def.movers) this.addMover(m);
     for (const c of def.climbs) this.addClimbVisual(c);
@@ -324,7 +325,8 @@ export class Stage {
     }
   }
 
-  private addDecor(d: DecorDef): void {
+  /** Ajoute un décor ; renvoie son plan pour que les scripts puissent le masquer ou le déplacer. */
+  addDecor(d: DecorDef): THREE.Mesh {
     const a = this.game.assets;
     const z = d.z ?? -1;
     const near = z > -8;
@@ -341,6 +343,7 @@ export class Stage {
     }
     if (d.sway) this.swayers.push({ mesh, amp: d.sway, seed: this.rand() * 10 });
     if (d.fly) this.flyers.push({ mesh, def: d, x0: d.x });
+    return mesh;
   }
 
   npc(id: string): Npc | undefined {

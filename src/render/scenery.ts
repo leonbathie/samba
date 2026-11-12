@@ -271,3 +271,32 @@ export function makeRays(w: number, h: number, color = 0xfff0b0, opacity = 0.22)
   mesh.renderOrder = 6;
   return mesh;
 }
+
+/**
+ * Grand tronc d'arbre : colonne d'écorce (texture répétée en miroir) ombrée sur les bords pour
+ * suggérer sa rondeur.
+ */
+export function makeTrunk(x: number, w: number, y0: number, y1: number, tex: THREE.Texture, tint = 0xffffff): THREE.Mesh {
+  const h = y1 - y0;
+  const bark = tex.clone();
+  bark.wrapS = bark.wrapT = THREE.MirroredRepeatWrapping;
+  bark.needsUpdate = true;
+  const geo = new THREE.PlaneGeometry(w, h, 4, 1);
+  const uv = geo.attributes.uv;
+  const cols = new Float32Array(uv.count * 3);
+  const base = new THREE.Color(tint);
+  for (let i = 0; i < uv.count; i++) {
+    const u = uv.getX(i);
+    uv.setXY(i, u * (w / 3.2), uv.getY(i) * (h / 3.2));
+    const shade = 0.5 + 0.62 * Math.sin(u * Math.PI);
+    cols[i * 3] = base.r * shade;
+    cols[i * 3 + 1] = base.g * shade;
+    cols[i * 3 + 2] = base.b * shade;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  const mat = new THREE.MeshBasicMaterial({ map: bark, vertexColors: true, toneMapped: false });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(x + w / 2, (y0 + y1) / 2, -0.7);
+  mesh.renderOrder = -6;
+  return mesh;
+}
