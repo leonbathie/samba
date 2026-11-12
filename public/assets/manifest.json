@@ -1,10 +1,5 @@
 {
  "images": {
-  "bg/arbres": {
-   "file": "bg/arbres.webp",
-   "w": 1024,
-   "h": 1536
-  },
   "bg/grotte": {
    "file": "bg/grotte.webp",
    "w": 1672,

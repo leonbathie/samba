@@ -24,26 +24,65 @@ class Lama:
         return cv2.resize(out, (w, h), interpolation=cv2.INTER_CUBIC)
 
 
-def inpaint(lama, img, mask, context=1.8, min_side=384):
-    """Fill every connected component of `mask` using its own context window."""
+def _fill_window(lama, result, mask, target, wx0, wy0, side):
+    win = result[wy0:wy0 + side, wx0:wx0 + side]
+    wmask = target[wy0:wy0 + side, wx0:wx0 + side]
+    if not wmask.any():
+        return
+    filled = lama.fill(win, mask[wy0:wy0 + side, wx0:wx0 + side])
+    soft = cv2.GaussianBlur(wmask.astype(np.float32), (0, 0), 2.0)
+    soft = np.clip(soft * 1.6, 0, 1)[..., None]
+    soft[wmask] = 1.0
+    result[wy0:wy0 + side, wx0:wx0 + side] = (filled * soft + win * (1 - soft)).astype(np.uint8)
+
+
+def inpaint(lama, img, mask, context=1.8, min_side=384, tile=640, margin=72):
+    """Fill every connected component of `mask`.
+
+    A component that fits in one window is filled with its own centred context window. A larger one
+    is filled tile by tile: each tile only fills the pixels far enough from its borders, so every
+    pixel is reconstructed with real context around it.
+    """
     H, W = img.shape[:2]
     result = img.copy()
+    remaining = mask.copy()
     n, lab, stats, _ = cv2.connectedComponentsWithStats(mask.astype(np.uint8))
+    limit = min(H, W)
     for i in range(1, n):
         x, y, w, h, area = stats[i]
         if area < 20:
             continue
+        comp = lab == i
         side = int(max(w, h) * context)
-        side = min(max(side, min_side), min(H, W))
-        cx, cy = x + w // 2, y + h // 2
-        wx0 = int(np.clip(cx - side // 2, 0, W - side))
-        wy0 = int(np.clip(cy - side // 2, 0, H - side))
-        win = result[wy0:wy0 + side, wx0:wx0 + side]
-        wmask = lab[wy0:wy0 + side, wx0:wx0 + side] == i
-        allmask = mask[wy0:wy0 + side, wx0:wx0 + side]
-        filled = lama.fill(win, allmask)
-        soft = cv2.GaussianBlur(wmask.astype(np.float32), (0, 0), 2.0)
-        soft = np.clip(soft * 1.6, 0, 1)[..., None]
-        soft[wmask] = 1.0
-        result[wy0:wy0 + side, wx0:wx0 + side] = (filled * soft + win * (1 - soft)).astype(np.uint8)
+        if max(w, h) <= 0.8 * limit and side <= limit:
+            side = min(max(side, min_side), limit)
+            cx, cy = x + w // 2, y + h // 2
+            wx0 = int(np.clip(cx - side // 2, 0, W - side))
+            wy0 = int(np.clip(cy - side // 2, 0, H - side))
+            _fill_window(lama, result, remaining, comp, wx0, wy0, side)
+            remaining &= ~comp
+            continue
+        side = min(tile, limit)
+        step = side - 2 * margin
+        ty = max(0, y - margin)
+        while True:
+            wy0 = int(min(ty, H - side))
+            tx = max(0, x - margin)
+            while True:
+                wx0 = int(min(tx, W - side))
+                inner = np.zeros((H, W), dtype=bool)
+                ix0 = wx0 if wx0 == 0 else wx0 + margin
+                iy0 = wy0 if wy0 == 0 else wy0 + margin
+                ix1 = W if wx0 + side >= W else wx0 + side - margin
+                iy1 = H if wy0 + side >= H else wy0 + side - margin
+                inner[iy0:iy1, ix0:ix1] = True
+                target = comp & remaining & inner
+                _fill_window(lama, result, remaining, target, wx0, wy0, side)
+                remaining &= ~target
+                if wx0 + side - margin >= x + w or wx0 + side >= W:
+                    break
+                tx = wx0 + step
+            if wy0 + side - margin >= y + h or wy0 + side >= H:
+                break
+            ty = wy0 + step
     return result
