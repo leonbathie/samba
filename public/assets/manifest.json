@@ -1,0 +1,623 @@
+{
+ "images": {
+  "bg/arbres": {
+   "file": "bg/arbres.webp",
+   "w": 1024,
+   "h": 1536
+  },
+  "bg/grotte": {
+   "file": "bg/grotte.webp",
+   "w": 1672,
+   "h": 941
+  },
+  "bg/mangrove": {
+   "file": "bg/mangrove.webp",
+   "w": 1672,
+   "h": 941
+  },
+  "bg/riviere": {
+   "file": "bg/riviere.webp",
+   "w": 1672,
+   "h": 941
+  },
+  "bg/savane": {
+   "file": "bg/savane.webp",
+   "w": 1672,
+   "h": 941
+  },
+  "bg/village": {
+   "file": "bg/village.webp",
+   "w": 1672,
+   "h": 941
+  },
+  "enemies/crocodile": {
+   "file": "enemies/crocodile.webp",
+   "w": 487,
+   "h": 246,
+   "fx": 0.456,
+   "hx": 0.74
+  },
+  "enemies/crocodile_nage": {
+   "file": "enemies/crocodile_nage.webp",
+   "w": 426,
+   "h": 121,
+   "fx": 0.547,
+   "hx": 0.933
+  },
+  "enemies/hyene": {
+   "file": "enemies/hyene.webp",
+   "w": 376,
+   "h": 290,
+   "fx": 0.493,
+   "hx": 0.604
+  },
+  "enemies/hyene_b": {
+   "file": "enemies/hyene_b.webp",
+   "w": 372,
+   "h": 312,
+   "fx": 0.51,
+   "hx": 0.671
+  },
+  "enemies/phacochere": {
+   "file": "enemies/phacochere.webp",
+   "w": 432,
+   "h": 303,
+   "fx": 0.581,
+   "hx": 0.566
+  },
+  "enemies/serpent": {
+   "file": "enemies/serpent.webp",
+   "w": 291,
+   "h": 305,
+   "fx": 0.516,
+   "hx": 0.559
+  },
+  "enemies/serpent_attaque": {
+   "file": "enemies/serpent_attaque.webp",
+   "w": 365,
+   "h": 312,
+   "fx": 0.356,
+   "hx": 0.682
+  },
+  "enemies/singe_arme": {
+   "file": "enemies/singe_arme.webp",
+   "w": 358,
+   "h": 303,
+   "fx": 0.406,
+   "hx": 0.36
+  },
+  "enemies/singe_assis": {
+   "file": "enemies/singe_assis.webp",
+   "w": 263,
+   "h": 274,
+   "fx": 0.566,
+   "hx": 0.701
+  },
+  "enemies/singe_lance": {
+   "file": "enemies/singe_lance.webp",
+   "w": 382,
+   "h": 294,
+   "fx": 0.411,
+   "hx": 0.549
+  },
+  "hero/banana_ready": {
+   "file": "hero/banana_ready.webp",
+   "w": 299,
+   "h": 409,
+   "fx": 0.627,
+   "hx": 0.51
+  },
+  "hero/banana_windup": {
+   "file": "hero/banana_windup.webp",
+   "w": 374,
+   "h": 398,
+   "fx": 0.59,
+   "hx": 0.468
+  },
+  "hero/climb": {
+   "file": "hero/climb.webp",
+   "w": 284,
+   "h": 430,
+   "fx": 0.374,
+   "hx": 0.441
+  },
+  "hero/crouch": {
+   "file": "hero/crouch.webp",
+   "w": 324,
+   "h": 326,
+   "fx": 0.544,
+   "hx": 0.741
+  },
+  "hero/guard": {
+   "file": "hero/guard.webp",
+   "w": 363,
+   "h": 321,
+   "fx": 0.55,
+   "hx": 0.588
+  },
+  "hero/hang": {
+   "file": "hero/hang.webp",
+   "w": 258,
+   "h": 418,
+   "fx": 0.606,
+   "hx": 0.583
+  },
+  "hero/hurt": {
+   "file": "hero/hurt.webp",
+   "w": 371,
+   "h": 415,
+   "fx": 0.491,
+   "hx": 0.293
+  },
+  "hero/idle": {
+   "file": "hero/idle.webp",
+   "w": 265,
+   "h": 436,
+   "fx": 0.661,
+   "hx": 0.559
+  },
+  "hero/jump": {
+   "file": "hero/jump.webp",
+   "w": 327,
+   "h": 372,
+   "fx": 0.444,
+   "hx": 0.503
+  },
+  "hero/land": {
+   "file": "hero/land.webp",
+   "w": 376,
+   "h": 314,
+   "fx": 0.46,
+   "hx": 0.626
+  },
+  "hero/run": {
+   "file": "hero/run.webp",
+   "w": 362,
+   "h": 369,
+   "fx": 0.703,
+   "hx": 0.674
+  },
+  "hero/sling_aim": {
+   "file": "hero/sling_aim.webp",
+   "w": 358,
+   "h": 389,
+   "fx": 0.61,
+   "hx": 0.402
+  },
+  "hero/sling_fire": {
+   "file": "hero/sling_fire.webp",
+   "w": 373,
+   "h": 391,
+   "fx": 0.601,
+   "hx": 0.372
+  },
+  "hero/stone_ready": {
+   "file": "hero/stone_ready.webp",
+   "w": 299,
+   "h": 412,
+   "fx": 0.598,
+   "hx": 0.492
+  },
+  "hero/stone_throw": {
+   "file": "hero/stone_throw.webp",
+   "w": 350,
+   "h": 384,
+   "fx": 0.575,
+   "hx": 0.468
+  },
+  "hero/talk": {
+   "file": "hero/talk.webp",
+   "w": 280,
+   "h": 382,
+   "fx": 0.53,
+   "hx": 0.441
+  },
+  "hero/throw": {
+   "file": "hero/throw.webp",
+   "w": 348,
+   "h": 397,
+   "fx": 0.515,
+   "hx": 0.491
+  },
+  "items/banane": {
+   "file": "items/banane.webp",
+   "w": 198,
+   "h": 200
+  },
+  "items/banane_vol": {
+   "file": "items/banane_vol.webp",
+   "w": 256,
+   "h": 222
+  },
+  "items/bouclier": {
+   "file": "items/bouclier.webp",
+   "w": 300,
+   "h": 297
+  },
+  "items/cle": {
+   "file": "items/cle.webp",
+   "w": 227,
+   "h": 256
+  },
+  "items/coeur": {
+   "file": "items/coeur.webp",
+   "w": 256,
+   "h": 228
+  },
+  "items/coffre": {
+   "file": "items/coffre.webp",
+   "w": 357,
+   "h": 293
+  },
+  "items/gemme": {
+   "file": "items/gemme.webp",
+   "w": 223,
+   "h": 256
+  },
+  "items/gourde": {
+   "file": "items/gourde.webp",
+   "w": 256,
+   "h": 255
+  },
+  "items/lanterne": {
+   "file": "items/lanterne.webp",
+   "w": 201,
+   "h": 368
+  },
+  "items/parchemin": {
+   "file": "items/parchemin.webp",
+   "w": 300,
+   "h": 288
+  },
+  "items/piece": {
+   "file": "items/piece.webp",
+   "w": 245,
+   "h": 256
+  },
+  "items/pierre": {
+   "file": "items/pierre.webp",
+   "w": 180,
+   "h": 169
+  },
+  "items/pierre_vol": {
+   "file": "items/pierre_vol.webp",
+   "w": 256,
+   "h": 198
+  },
+  "items/plume": {
+   "file": "items/plume.webp",
+   "w": 219,
+   "h": 256
+  },
+  "npc/amie": {
+   "file": "npc/amie.webp",
+   "w": 269,
+   "h": 430,
+   "fx": 0.463,
+   "hx": 0.539
+  },
+  "npc/amie_course": {
+   "file": "npc/amie_course.webp",
+   "w": 288,
+   "h": 361,
+   "fx": 0.816,
+   "hx": 0.58
+  },
+  "npc/artisan": {
+   "file": "npc/artisan.webp",
+   "w": 256,
+   "h": 324,
+   "fx": 0.768,
+   "hx": 0.696
+  },
+  "npc/conteuse": {
+   "file": "npc/conteuse.webp",
+   "w": 468,
+   "h": 447,
+   "fx": 0.367,
+   "hx": 0.702
+  },
+  "npc/cuisiniere": {
+   "file": "npc/cuisiniere.webp",
+   "w": 325,
+   "h": 262,
+   "fx": 0.107,
+   "hx": 0.587
+  },
+  "npc/danseur": {
+   "file": "npc/danseur.webp",
+   "w": 143,
+   "h": 249,
+   "fx": 0.421,
+   "hx": 0.649
+  },
+  "npc/danseuse": {
+   "file": "npc/danseuse.webp",
+   "w": 164,
+   "h": 286,
+   "fx": 0.436,
+   "hx": 0.301
+  },
+  "npc/doyen": {
+   "file": "npc/doyen.webp",
+   "w": 378,
+   "h": 525,
+   "fx": 0.451,
+   "hx": 0.334
+  },
+  "npc/enfant_fille": {
+   "file": "npc/enfant_fille.webp",
+   "w": 126,
+   "h": 156,
+   "fx": 0.365,
+   "hx": 0.403
+  },
+  "npc/enfant_garcon": {
+   "file": "npc/enfant_garcon.webp",
+   "w": 113,
+   "h": 155,
+   "fx": 0.468,
+   "hx": 0.677
+  },
+  "npc/enfants_assis": {
+   "file": "npc/enfants_assis.webp",
+   "w": 258,
+   "h": 240,
+   "fx": 0.602,
+   "hx": 0.552
+  },
+  "npc/femme_bleue": {
+   "file": "npc/femme_bleue.webp",
+   "w": 139,
+   "h": 275,
+   "fx": 0.645,
+   "hx": 0.356
+  },
+  "npc/femme_fruits": {
+   "file": "npc/femme_fruits.webp",
+   "w": 293,
+   "h": 524,
+   "fx": 0.409,
+   "hx": 0.297
+  },
+  "npc/femme_kente": {
+   "file": "npc/femme_kente.webp",
+   "w": 253,
+   "h": 526,
+   "fx": 0.427,
+   "hx": 0.325
+  },
+  "npc/femme_rose": {
+   "file": "npc/femme_rose.webp",
+   "w": 110,
+   "h": 285,
+   "fx": 0.545,
+   "hx": 0.63
+  },
+  "npc/femme_verte": {
+   "file": "npc/femme_verte.webp",
+   "w": 143,
+   "h": 278,
+   "fx": 0.533,
+   "hx": 0.383
+  },
+  "npc/fille_exploratrice": {
+   "file": "npc/fille_exploratrice.webp",
+   "w": 265,
+   "h": 521,
+   "fx": 0.573,
+   "hx": 0.451
+  },
+  "npc/garcon_explorateur": {
+   "file": "npc/garcon_explorateur.webp",
+   "w": 239,
+   "h": 464,
+   "fx": 0.532,
+   "hx": 0.401
+  },
+  "npc/grue": {
+   "file": "npc/grue.webp",
+   "w": 343,
+   "h": 432,
+   "fx": 0.535,
+   "hx": 0.531
+  },
+  "npc/mamie": {
+   "file": "npc/mamie.webp",
+   "w": 204,
+   "h": 274,
+   "fx": 0.263,
+   "hx": 0.712
+  },
+  "npc/musicien_djembe": {
+   "file": "npc/musicien_djembe.webp",
+   "w": 176,
+   "h": 301,
+   "fx": 0.374,
+   "hx": 0.368
+  },
+  "npc/musicien_kora": {
+   "file": "npc/musicien_kora.webp",
+   "w": 212,
+   "h": 304,
+   "fx": 0.813,
+   "hx": 0.433
+  },
+  "npc/musicienne_djembe": {
+   "file": "npc/musicienne_djembe.webp",
+   "w": 172,
+   "h": 274,
+   "fx": 0.644,
+   "hx": 0.243
+  },
+  "npc/porteuse": {
+   "file": "npc/porteuse.webp",
+   "w": 146,
+   "h": 416,
+   "fx": 0.521,
+   "hx": 0.609
+  },
+  "npc/singe_ami": {
+   "file": "npc/singe_ami.webp",
+   "w": 353,
+   "h": 325,
+   "fx": 0.547,
+   "hx": 0.638
+  },
+  "props/acacia": {
+   "file": "props/acacia.webp",
+   "w": 598,
+   "h": 323
+  },
+  "props/ballon": {
+   "file": "props/ballon.webp",
+   "w": 85,
+   "h": 82
+  },
+  "props/baobab": {
+   "file": "props/baobab.webp",
+   "w": 892,
+   "h": 588
+  },
+  "props/branche": {
+   "file": "props/branche.webp",
+   "w": 1062,
+   "h": 305
+  },
+  "props/buisson_fleurs": {
+   "file": "props/buisson_fleurs.webp",
+   "w": 376,
+   "h": 262
+  },
+  "props/case": {
+   "file": "props/case.webp",
+   "w": 452,
+   "h": 409
+  },
+  "props/cible": {
+   "file": "props/cible.webp",
+   "w": 114,
+   "h": 145
+  },
+  "props/cristaux": {
+   "file": "props/cristaux.webp",
+   "w": 124,
+   "h": 256
+  },
+  "props/entree_grotte": {
+   "file": "props/entree_grotte.webp",
+   "w": 358,
+   "h": 434
+  },
+  "props/etal_fruits": {
+   "file": "props/etal_fruits.webp",
+   "w": 591,
+   "h": 489
+  },
+  "props/feuillage": {
+   "file": "props/feuillage.webp",
+   "w": 626,
+   "h": 213
+  },
+  "props/grue_vol": {
+   "file": "props/grue_vol.webp",
+   "w": 300,
+   "h": 261
+  },
+  "props/ile_flottante": {
+   "file": "props/ile_flottante.webp",
+   "w": 400,
+   "h": 211
+  },
+  "props/liane": {
+   "file": "props/liane.webp",
+   "w": 155,
+   "h": 364
+  },
+  "props/nenuphar": {
+   "file": "props/nenuphar.webp",
+   "w": 234,
+   "h": 59
+  },
+  "props/oiseau": {
+   "file": "props/oiseau.webp",
+   "w": 196,
+   "h": 207
+  },
+  "props/pierre_gue": {
+   "file": "props/pierre_gue.webp",
+   "w": 162,
+   "h": 108
+  },
+  "props/pilotis": {
+   "file": "props/pilotis.webp",
+   "w": 238,
+   "h": 179
+  },
+  "props/pirogue": {
+   "file": "props/pirogue.webp",
+   "w": 366,
+   "h": 68
+  },
+  "props/plateforme_motif": {
+   "file": "props/plateforme_motif.webp",
+   "w": 549,
+   "h": 290
+  },
+  "props/pont_corde": {
+   "file": "props/pont_corde.webp",
+   "w": 656,
+   "h": 253
+  },
+  "props/pot": {
+   "file": "props/pot.webp",
+   "w": 236,
+   "h": 264
+  },
+  "props/racines": {
+   "file": "props/racines.webp",
+   "w": 518,
+   "h": 322
+  },
+  "props/rocher": {
+   "file": "props/rocher.webp",
+   "w": 409,
+   "h": 251
+  },
+  "props/sol_pierre": {
+   "file": "props/sol_pierre.webp",
+   "w": 1139,
+   "h": 288
+  },
+  "rooms/conteuse": {
+   "file": "rooms/conteuse.webp",
+   "w": 1672,
+   "h": 941
+  },
+  "rooms/famille": {
+   "file": "rooms/famille.webp",
+   "w": 1672,
+   "h": 941
+  },
+  "rooms/sorcier": {
+   "file": "rooms/sorcier.webp",
+   "w": 1672,
+   "h": 941
+  },
+  "rooms/temple": {
+   "file": "rooms/temple.webp",
+   "w": 1672,
+   "h": 941
+  },
+  "tex/ecorce": {
+   "file": "tex/ecorce.webp",
+   "w": 416,
+   "h": 416
+  },
+  "tex/terre": {
+   "file": "tex/terre.webp",
+   "w": 800,
+   "h": 93
+  }
+ }
+}
