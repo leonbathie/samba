@@ -418,14 +418,17 @@ export class Stage {
     return best;
   }
 
-  /** Angle de tir qui atteint la cible la plus proche devant le héros, ou null. */
-  aimAssist(ox: number, oy: number, facing: number, speed: number, grav: number, range: number, weapon: string): number | null {
+  /**
+   * Angle de tir (radians, compté dans la direction du regard) qui atteint la cible la plus proche
+   * devant le héros, ou null. La cible est choisie par rapport au héros (hx) ; la trajectoire part de
+   * sa main (ox, oy) et peut donc remonter presque à la verticale vers un signe situé juste au-dessus.
+   */
+  aimAssist(hx: number, ox: number, oy: number, facing: number, speed: number, grav: number, range: number, weapon: string): number | null {
     let best: { x: number; y: number } | null = null;
     let bd = range;
     const consider = (x: number, y: number): void => {
-      const dx = (x - ox) * facing;
-      if (dx < 0.05) return;
-      const d = Math.hypot(x - ox, y - oy);
+      if ((x - hx) * facing < 0.05) return;
+      const d = Math.hypot(x - hx, y - oy);
       if (d < bd) {
         bd = d;
         best = { x, y };
@@ -440,13 +443,13 @@ export class Stage {
     if (weapon !== 'banana') for (const tg of this.targets) consider(tg.x, tg.y);
     if (!best) return null;
     const target = best as { x: number; y: number };
-    const dx = Math.abs(target.x - ox);
+    const dx = (target.x - ox) * facing;
     const dy = target.y - oy;
     const v2 = speed * speed;
     const disc = v2 * v2 - grav * (grav * dx * dx + 2 * dy * v2);
     if (disc < 0) return null;
-    const ang = Math.atan((v2 - Math.sqrt(disc)) / (grav * dx));
-    return ang > -0.9 && ang < 1.48 ? ang : null;
+    const ang = Math.atan2(v2 - Math.sqrt(disc), grav * dx);
+    return ang > -0.9 && ang < 2.6 ? ang : null;
   }
 
   // ------------------------------------------------------------------ effets et apparitions

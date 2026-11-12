@@ -14,6 +14,15 @@ import { QUESTS, knownClues } from '../game/story';
 
 type Child = HTMLElement | string | null | false | undefined;
 
+/** Capture du pointeur : certains navigateurs la refusent (pointeur synthétique, stylet) ; on continue sans. */
+function capture(el: HTMLElement, id: number): void {
+  try {
+    el.setPointerCapture(id);
+  } catch {
+    /* sans capture, le bouton se relâche quand le doigt sort de sa zone */
+  }
+}
+
 function h<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', ...kids: Child[]): HTMLElementTagNameMap[K] {
   const el = document.createElement(tag);
   if (cls) el.className = cls;
@@ -202,7 +211,7 @@ export class Ui implements UiBridge {
     pad.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       padId = e.pointerId;
-      pad.setPointerCapture(e.pointerId);
+      capture(pad, e.pointerId);
       move(e);
     });
     pad.addEventListener('pointermove', (e) => {
@@ -224,7 +233,7 @@ export class Ui implements UiBridge {
       };
       b.addEventListener('pointerdown', (e) => {
         e.preventDefault();
-        b.setPointerCapture(e.pointerId);
+        capture(b, e.pointerId);
         b.classList.add('on');
         this.input.setVirtual(action, true);
       });

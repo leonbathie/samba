@@ -405,7 +405,7 @@ export class Player {
     let ang = (spec.angle * Math.PI) / 180;
     // Aide à la visée : si une cible se trouve devant, le tir est ajusté vers elle.
     if (!up && !down) {
-      const aim = this.stage.aimAssist(ox, oy, this.facing, spec.speed, spec.grav, w === 'banana' ? 9 : w === 'stone' ? 10 : 15, w);
+      const aim = this.stage.aimAssist(this.x, ox, oy, this.facing, spec.speed, spec.grav, w === 'banana' ? 9 : w === 'stone' ? 10 : 15, w);
       if (aim !== null) ang = aim;
     }
     this.stage.spawnProjectile({
