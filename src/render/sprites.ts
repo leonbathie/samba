@@ -236,7 +236,7 @@ export function cloudTexture(): THREE.Texture {
   return tex;
 }
 
-/** Écorce de baobab dessinée sur un canevas : plaques d'écorce décalées, répétable dans les deux sens. */
+/** Écorce de baobab dessinée sur un canevas : fibres verticales ondulées, répétable dans les deux sens. */
 export function barkTexture(): THREE.Texture {
   const W = 256;
   const H = 512;
@@ -244,48 +244,52 @@ export function barkTexture(): THREE.Texture {
   c.width = W;
   c.height = H;
   const g = c.getContext('2d')!;
-  g.fillStyle = '#5e3415';
+  g.fillStyle = '#7a4219';
   g.fillRect(0, 0, W, H);
   let seed = 77;
   const r = (): number => {
     seed = (seed * 16807) % 2147483647;
     return seed / 2147483647;
   };
-  const cols = 6;
-  const cw = W / cols;
-  for (let i = 0; i < cols; i++) {
-    let y = -r() * 120;
-    while (y < H) {
-      const h = 70 + r() * 90;
-      const x = i * cw + 3 + r() * 3;
-      const w = cw - 6 - r() * 4;
-      for (const oy of [0, -H, H]) {
-        const grad = g.createLinearGradient(x, 0, x + w, 0);
-        grad.addColorStop(0, '#d08a3e');
-        grad.addColorStop(0.45, '#a9662b');
-        grad.addColorStop(1, '#7a4419');
-        g.fillStyle = grad;
-        g.strokeStyle = '#3d1f0b';
-        g.lineWidth = 3;
-        g.beginPath();
-        g.roundRect(x, y + oy, w, h, 12);
-        g.fill();
-        g.stroke();
-        g.strokeStyle = 'rgba(255,196,110,0.5)';
-        g.lineWidth = 2;
-        g.beginPath();
-        g.moveTo(x + 7, y + oy + h - 14);
-        g.lineTo(x + 7, y + oy + 12);
-        g.quadraticCurveTo(x + 8, y + oy + 6, x + 16, y + oy + 6);
-        g.stroke();
-        g.strokeStyle = 'rgba(60,30,10,0.35)';
-        g.lineWidth = 1.5;
-        g.beginPath();
-        g.moveTo(x + w * 0.55, y + oy + h * 0.2);
-        g.lineTo(x + w * 0.5, y + oy + h * 0.8);
-        g.stroke();
+  // Une fibre : courbe verticale ondulée, dessinée trois fois pour se raccorder horizontalement.
+  const fibre = (x0: number, width: number, color: string, amp: number, k: number, phase: number): void => {
+    g.strokeStyle = color;
+    g.lineWidth = width;
+    g.lineCap = 'round';
+    for (const ox of [-W, 0, W]) {
+      g.beginPath();
+      for (let y = -4; y <= H + 4; y += 8) {
+        const x = x0 + ox + Math.sin((y / H) * Math.PI * 2 * k + phase) * amp;
+        if (y < 0) g.moveTo(x, y);
+        else g.lineTo(x, y);
       }
-      y += h + 5;
+      g.stroke();
+    }
+  };
+  const tones = ['#8f4f20', '#a55f28', '#b86e31', '#c7803c', '#9a5524', '#d39150'];
+  for (let i = 0; i < 52; i++) {
+    fibre(r() * W, 5 + r() * 16, tones[Math.floor(r() * tones.length)], 3 + r() * 7, 1 + Math.floor(r() * 2), r() * 6.3);
+  }
+  g.globalAlpha = 0.75;
+  for (let i = 0; i < 30; i++) fibre(r() * W, 1.2 + r() * 2.6, '#3e1d08', 3 + r() * 7, 1 + Math.floor(r() * 2), r() * 6.3);
+  g.globalAlpha = 0.45;
+  for (let i = 0; i < 24; i++) fibre(r() * W, 1 + r() * 2, '#f2b36a', 2 + r() * 5, 1, r() * 6.3);
+  g.globalAlpha = 1;
+  // Nœuds et fissures horizontales.
+  for (let i = 0; i < 9; i++) {
+    const x = r() * W;
+    const y = r() * H;
+    const rx = 8 + r() * 14;
+    const ry = 4 + r() * 6;
+    for (const ox of [-W, 0, W]) {
+      const grad = g.createRadialGradient(x + ox, y, 1, x + ox, y, rx);
+      grad.addColorStop(0, 'rgba(40,18,5,0.85)');
+      grad.addColorStop(0.6, 'rgba(90,45,15,0.5)');
+      grad.addColorStop(1, 'rgba(90,45,15,0)');
+      g.fillStyle = grad;
+      g.beginPath();
+      g.ellipse(x + ox, y, rx, ry, 0, 0, Math.PI * 2);
+      g.fill();
     }
   }
   const tex = new THREE.CanvasTexture(c);
