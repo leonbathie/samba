@@ -9,7 +9,7 @@ import type { Solid } from './physics';
 import { Player } from './Player';
 import { Checkpoint, Chest, Companion, Door, type Interactable, Npc, Pickup, Projectile, type ProjectileSpec, Target } from './entities';
 import { createEnemy, type Enemy } from './enemies';
-import { Backdrop, makeEarth, makeTrunk, makeWater, makeWaterfall } from '../render/scenery';
+import { Backdrop, SkyVeil, makeEarth, makeTrunk, makeWater, makeWaterfall } from '../render/scenery';
 import { glowSprite, imageSprite, makeSprite, Particles, QUAD } from '../render/sprites';
 import { clamp, damp, rng } from '../core/math';
 import { t } from '../i18n';
@@ -112,11 +112,14 @@ export class Stage {
   readonly npcs: Npc[] = [];
   readonly targets: Target[] = [];
   interactTarget: Interactable | null = null;
+  /** Fonction appelée à chaque image par un script de niveau (mise en scène, énigme). */
+  onTick: ((dt: number) => void) | null = null;
   time = 0;
   /** Teinte des éléments proches (blanc le jour, bleuté la nuit). */
   readonly lightColor: number;
 
   private backdrop: Backdrop | null = null;
+  private veil: SkyVeil | null = null;
   private movers: MoverRt[] = [];
   private animated: THREE.ShaderMaterial[] = [];
   private swayers: { mesh: THREE.Object3D; amp: number; seed: number }[] = [];
@@ -155,20 +158,26 @@ export class Stage {
       const h = b.maxY - b.minY;
       const mesh = makeSprite(a.tex(def.painting), w, h, { order: -50 });
       (mesh.material as THREE.MeshBasicMaterial).transparent = false;
-      mesh.position.set((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2, -0.6);
+      mesh.scale.multiplyScalar(1.012);
+      mesh.position.set((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2, -0.06);
       this.root.add(mesh);
     } else {
       this.backdrop = new Backdrop(a.tex(def.theme.backdrop), a.aspect(def.theme.backdrop), def.theme.tint ?? 0xffffff);
       if (def.theme.alignLow !== undefined) this.backdrop.alignLow = def.theme.alignLow;
       if (def.theme.alignHigh !== undefined) this.backdrop.alignHigh = def.theme.alignHigh;
       this.root.add(this.backdrop.mesh);
+      if (def.theme.skyAt) {
+        this.veil = new SkyVeil(0x3f8fe8, 0xbfe3ff);
+        this.root.add(this.veil.mesh);
+      }
     }
 
-    for (const tr of def.trunks) this.root.add(makeTrunk(tr.x, tr.w, tr.y0, tr.y1, a.tex('tex/ecorce'), this.lightColor));
+    for (const tr of def.trunks) this.root.add(makeTrunk(tr.x, tr.w, tr.y0, tr.y1, a.tex('fx/ecorce'), this.lightColor));
     for (const s of def.solids) this.addSolid(s);
     for (const m of def.movers) this.addMover(m);
     for (const c of def.climbs) this.addClimbVisual(c);
     for (const w of def.waters) {
+      if (w.hidden) continue;
       const mesh = makeWater(w.x0, w.x1, w.y, b.minY - 10, def.theme.water);
       mesh.position.z = 0.3;
       mesh.renderOrder = 8;
@@ -346,6 +355,24 @@ export class Stage {
     return mesh;
   }
 
+  /** Retire un habitant de la scène (il devient compagnon, il s'en va…). */
+  removeNpc(id: string): void {
+    const npc = this.npc(id);
+    if (!npc) return;
+    this.npcs.splice(this.npcs.indexOf(npc), 1);
+    const i = this.interactables.indexOf(npc);
+    if (i >= 0) this.interactables.splice(i, 1);
+    npc.dispose();
+  }
+
+  removeCompanion(): void {
+    const c = this.companion;
+    if (!c) return;
+    this.fx.spark.burst({ x: c.x, y: c.y + 0.8, count: 12, speed: 2.5, life: 0.6, size: 0.26, color: 0xfff0b0 });
+    c.dispose();
+    this.companion = null;
+  }
+
   npc(id: string): Npc | undefined {
     return this.npcs.find((n) => n.def.id === id);
   }
@@ -396,7 +423,7 @@ export class Stage {
     let bd = range;
     const consider = (x: number, y: number): void => {
       const dx = (x - ox) * facing;
-      if (dx < 0.6) return;
+      if (dx < 0.3) return;
       const d = Math.hypot(x - ox, y - oy);
       if (d < bd) {
         bd = d;
@@ -542,6 +569,7 @@ export class Stage {
       g.ui.prompt(null);
     }
 
+    this.onTick?.(dt);
     this.fx.soft.update(dt);
     this.fx.spark.update(dt);
     this.fx.star.update(dt);
@@ -703,7 +731,7 @@ export class Stage {
     const indoor = this.def.kind === 'room';
     this.look = damp(this.look, p.facing * (indoor ? 0.3 : 1.7), 2.2, dt);
     const tx = p.x + this.look;
-    const ty = p.y + (indoor ? 0.9 : v.viewH * 0.17);
+    const ty = p.y + (indoor ? 0.9 : v.viewH * 0.22);
     if (snap) {
       this.camX = tx;
       this.camY = ty;
@@ -724,6 +752,7 @@ export class Stage {
     this.camY = minY > maxY ? (b.minY + b.maxY) / 2 : clamp(this.camY, minY, maxY);
     v.setCamera(this.camX, this.camY);
     this.backdrop?.update(v, b);
+    this.veil?.update(v, (this.camY - 6) / ((this.def.theme.skyAt ?? 40) - 6));
   }
 
   /** Réarme la détection de chute après le retour du héros. */

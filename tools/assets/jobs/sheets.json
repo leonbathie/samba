@@ -1,67 +1,545 @@
 {
-  "_comment": "Découpe des planches à fond transparent. box = [x0, y0, x1, y1] en pixels de la planche d'origine. keep_parts = conserver aussi les petits éléments détachés (poussière, éclats).",
-  "sheets": {
-    "hero_a": "03_Personnages_et_Ennemis/01_Heros_positions.png",
-    "hero_b": "03_Personnages_et_Ennemis/02_Heros_poses_action.png",
-    "enemies": "03_Personnages_et_Ennemis/03_Animaux_ennemis.png",
-    "villagers": "03_Personnages_et_Ennemis/04_Villageois_et_animaux.png",
-    "platforms": "04_Decors_et_Objets/02_Plateformes_et_elements.png",
-    "objects": "04_Decors_et_Objets/03_Objets_bonus_et_projectiles.png"
+ "_comment": "Découpe des planches à fond transparent. box = [x0, y0, x1, y1] en pixels de la planche d'origine. keep_parts = conserver aussi les petits éléments détachés (poussière, éclats).",
+ "sheets": {
+  "hero_a": "03_Personnages_et_Ennemis/01_Heros_positions.png",
+  "hero_b": "03_Personnages_et_Ennemis/02_Heros_poses_action.png",
+  "enemies": "03_Personnages_et_Ennemis/03_Animaux_ennemis.png",
+  "villagers": "03_Personnages_et_Ennemis/04_Villageois_et_animaux.png",
+  "platforms": "04_Decors_et_Objets/02_Plateformes_et_elements.png",
+  "objects": "04_Decors_et_Objets/03_Objets_bonus_et_projectiles.png"
+ },
+ "sprites": [
+  {
+   "out": "hero/idle",
+   "sheet": "hero_a",
+   "box": [
+    39,
+    17,
+    300,
+    449
+   ]
   },
-  "sprites": [
-    { "out": "hero/idle", "sheet": "hero_a", "box": [39, 17, 300, 449] },
-    { "out": "hero/run", "sheet": "hero_a", "box": [372, 69, 729, 433] },
-    { "out": "hero/jump", "sheet": "hero_a", "box": [776, 12, 1099, 378] },
-    { "out": "hero/crouch", "sheet": "hero_a", "box": [1159, 124, 1479, 445] },
-    { "out": "hero/land", "sheet": "hero_a", "box": [742, 640, 1112, 950], "keep_parts": true },
-    { "out": "hero/hurt", "sheet": "hero_a", "box": [1152, 545, 1518, 956] },
-    { "out": "hero/banana_ready", "sheet": "hero_b", "box": [47, 18, 341, 422] },
-    { "out": "hero/banana_windup", "sheet": "hero_b", "box": [460, 28, 830, 422] },
-    { "out": "hero/throw", "sheet": "hero_b", "box": [906, 28, 1248, 420] },
-    { "out": "hero/stone_ready", "sheet": "hero_b", "box": [1383, 18, 1677, 425] },
-    { "out": "hero/stone_throw", "sheet": "hero_b", "box": [22, 474, 367, 853] },
-    { "out": "hero/sling_aim", "sheet": "hero_b", "box": [459, 469, 813, 853] },
-    { "out": "hero/sling_fire", "sheet": "hero_b", "box": [881, 469, 1250, 856] },
-    { "out": "hero/guard", "sheet": "hero_b", "box": [1369, 536, 1728, 851] },
-
-    { "out": "enemies/singe_assis", "sheet": "enemies", "box": [81, 115, 339, 383] },
-    { "out": "enemies/singe_arme", "sheet": "enemies", "box": [476, 84, 830, 383] },
-    { "out": "enemies/singe_lance", "sheet": "enemies", "box": [871, 92, 1249, 382] },
-    { "out": "enemies/serpent", "sheet": "enemies", "box": [1418, 82, 1705, 382] },
-    { "out": "enemies/serpent_attaque", "sheet": "enemies", "box": [29, 476, 390, 783] },
-    { "out": "enemies/crocodile", "sheet": "enemies", "box": [400, 541, 883, 783] },
-    { "out": "enemies/phacochere", "sheet": "enemies", "box": [909, 480, 1336, 778] },
-    { "out": "enemies/hyene", "sheet": "enemies", "box": [1376, 502, 1747, 786] },
-    { "out": "enemies/hyene_b", "sheet": "villagers", "box": [1138, 687, 1505, 994] },
-
-    { "out": "npc/femme_fruits", "sheet": "villagers", "box": [74, 10, 362, 529] },
-    { "out": "npc/femme_kente", "sheet": "villagers", "box": [447, 8, 695, 528] },
-    { "out": "npc/doyen", "sheet": "villagers", "box": [774, 8, 1147, 529] },
-    { "out": "npc/fille_exploratrice", "sheet": "villagers", "box": [1202, 13, 1463, 529] },
-    { "out": "npc/garcon_explorateur", "sheet": "villagers", "box": [63, 546, 296, 1006] },
-    { "out": "npc/singe_ami", "sheet": "villagers", "box": [351, 674, 700, 994] },
-    { "out": "npc/grue", "sheet": "villagers", "box": [733, 568, 1072, 996] },
-
-    { "out": "props/sol_pierre", "sheet": "platforms", "box": [17, 11, 1152, 294] },
-    { "out": "props/branche", "sheet": "platforms", "box": [79, 315, 1137, 616] },
-    { "out": "props/pont_corde", "sheet": "platforms", "box": [19, 624, 670, 872] },
-    { "out": "props/plateforme_motif", "sheet": "platforms", "box": [1186, 38, 1730, 324] },
-    { "out": "props/rocher", "sheet": "platforms", "box": [682, 619, 1087, 865] },
-    { "out": "props/buisson_fleurs", "sheet": "platforms", "box": [1367, 605, 1739, 862] },
-    { "out": "props/pot", "sheet": "platforms", "box": [1115, 612, 1346, 872] },
-    { "out": "props/liane", "sheet": "platforms", "box": [1355, 262, 1506, 622] },
-
-    { "out": "items/piece", "sheet": "objects", "box": [63, 39, 361, 350], "max_side": 256 },
-    { "out": "items/cle", "sheet": "objects", "box": [408, 27, 705, 361], "max_side": 256 },
-    { "out": "items/gemme", "sheet": "objects", "box": [760, 39, 1028, 347], "max_side": 256 },
-    { "out": "items/coeur", "sheet": "objects", "box": [1082, 59, 1401, 342], "max_side": 256 },
-    { "out": "items/coffre", "sheet": "objects", "box": [33, 392, 386, 679] },
-    { "out": "items/banane_vol", "sheet": "objects", "box": [405, 374, 720, 646], "max_side": 256 },
-    { "out": "items/pierre_vol", "sheet": "objects", "box": [726, 408, 1049, 658], "max_side": 256, "keep_parts": true },
-    { "out": "items/gourde", "sheet": "objects", "box": [1099, 361, 1419, 681], "max_side": 256 },
-    { "out": "items/bouclier", "sheet": "objects", "box": [6, 678, 386, 1053], "max_side": 300 },
-    { "out": "items/plume", "sheet": "objects", "box": [395, 698, 699, 1054], "max_side": 256 },
-    { "out": "items/parchemin", "sheet": "objects", "box": [713, 697, 1074, 1043], "max_side": 300 },
-    { "out": "items/lanterne", "sheet": "objects", "box": [1174, 688, 1370, 1052] }
-  ]
+  {
+   "out": "hero/run",
+   "sheet": "hero_a",
+   "box": [
+    372,
+    69,
+    729,
+    433
+   ]
+  },
+  {
+   "out": "hero/jump",
+   "sheet": "hero_a",
+   "box": [
+    776,
+    12,
+    1099,
+    378
+   ]
+  },
+  {
+   "out": "hero/crouch",
+   "sheet": "hero_a",
+   "box": [
+    1159,
+    124,
+    1479,
+    445
+   ]
+  },
+  {
+   "out": "hero/land",
+   "sheet": "hero_a",
+   "box": [
+    742,
+    640,
+    1112,
+    950
+   ],
+   "keep_parts": true
+  },
+  {
+   "out": "hero/hurt",
+   "sheet": "hero_a",
+   "box": [
+    1152,
+    545,
+    1518,
+    956
+   ]
+  },
+  {
+   "out": "hero/banana_ready",
+   "sheet": "hero_b",
+   "box": [
+    47,
+    18,
+    341,
+    422
+   ]
+  },
+  {
+   "out": "hero/banana_windup",
+   "sheet": "hero_b",
+   "box": [
+    460,
+    28,
+    830,
+    422
+   ]
+  },
+  {
+   "out": "hero/throw",
+   "sheet": "hero_b",
+   "box": [
+    906,
+    28,
+    1248,
+    420
+   ]
+  },
+  {
+   "out": "hero/stone_ready",
+   "sheet": "hero_b",
+   "box": [
+    1383,
+    18,
+    1677,
+    425
+   ]
+  },
+  {
+   "out": "hero/stone_throw",
+   "sheet": "hero_b",
+   "box": [
+    22,
+    474,
+    367,
+    853
+   ]
+  },
+  {
+   "out": "hero/sling_aim",
+   "sheet": "hero_b",
+   "box": [
+    459,
+    469,
+    813,
+    853
+   ]
+  },
+  {
+   "out": "hero/sling_fire",
+   "sheet": "hero_b",
+   "box": [
+    881,
+    469,
+    1250,
+    856
+   ]
+  },
+  {
+   "out": "hero/guard",
+   "sheet": "hero_b",
+   "box": [
+    1369,
+    536,
+    1728,
+    851
+   ]
+  },
+  {
+   "out": "enemies/singe_assis",
+   "sheet": "enemies",
+   "box": [
+    81,
+    115,
+    339,
+    383
+   ]
+  },
+  {
+   "out": "enemies/singe_arme",
+   "sheet": "enemies",
+   "box": [
+    476,
+    84,
+    830,
+    383
+   ]
+  },
+  {
+   "out": "enemies/singe_lance",
+   "sheet": "enemies",
+   "box": [
+    871,
+    92,
+    1249,
+    382
+   ]
+  },
+  {
+   "out": "enemies/serpent",
+   "sheet": "enemies",
+   "box": [
+    1418,
+    82,
+    1705,
+    382
+   ]
+  },
+  {
+   "out": "enemies/serpent_attaque",
+   "sheet": "enemies",
+   "box": [
+    29,
+    476,
+    390,
+    783
+   ]
+  },
+  {
+   "out": "enemies/crocodile",
+   "sheet": "enemies",
+   "box": [
+    400,
+    541,
+    883,
+    783
+   ]
+  },
+  {
+   "out": "enemies/phacochere",
+   "sheet": "enemies",
+   "box": [
+    909,
+    480,
+    1336,
+    778
+   ]
+  },
+  {
+   "out": "enemies/hyene",
+   "sheet": "enemies",
+   "box": [
+    1376,
+    502,
+    1747,
+    786
+   ]
+  },
+  {
+   "out": "enemies/hyene_b",
+   "sheet": "villagers",
+   "box": [
+    1138,
+    687,
+    1505,
+    994
+   ]
+  },
+  {
+   "out": "npc/femme_fruits",
+   "sheet": "villagers",
+   "box": [
+    74,
+    10,
+    362,
+    529
+   ]
+  },
+  {
+   "out": "npc/femme_kente",
+   "sheet": "villagers",
+   "box": [
+    447,
+    8,
+    695,
+    528
+   ]
+  },
+  {
+   "out": "npc/doyen",
+   "sheet": "villagers",
+   "box": [
+    774,
+    8,
+    1147,
+    529
+   ]
+  },
+  {
+   "out": "npc/fille_exploratrice",
+   "sheet": "villagers",
+   "box": [
+    1202,
+    13,
+    1463,
+    529
+   ]
+  },
+  {
+   "out": "npc/garcon_explorateur",
+   "sheet": "villagers",
+   "box": [
+    63,
+    546,
+    296,
+    1006
+   ]
+  },
+  {
+   "out": "npc/singe_ami",
+   "sheet": "villagers",
+   "box": [
+    351,
+    674,
+    700,
+    994
+   ]
+  },
+  {
+   "out": "npc/grue",
+   "sheet": "villagers",
+   "box": [
+    733,
+    568,
+    1072,
+    996
+   ]
+  },
+  {
+   "out": "props/sol_pierre",
+   "sheet": "platforms",
+   "box": [
+    17,
+    11,
+    1152,
+    294
+   ]
+  },
+  {
+   "out": "props/branche",
+   "sheet": "platforms",
+   "box": [
+    79,
+    315,
+    1137,
+    616
+   ]
+  },
+  {
+   "out": "props/pont_corde",
+   "sheet": "platforms",
+   "box": [
+    19,
+    624,
+    670,
+    872
+   ]
+  },
+  {
+   "out": "props/plateforme_motif",
+   "sheet": "platforms",
+   "box": [
+    1186,
+    38,
+    1730,
+    324
+   ]
+  },
+  {
+   "out": "props/rocher",
+   "sheet": "platforms",
+   "box": [
+    682,
+    619,
+    1087,
+    865
+   ]
+  },
+  {
+   "out": "props/buisson_fleurs",
+   "sheet": "platforms",
+   "box": [
+    1367,
+    605,
+    1739,
+    862
+   ]
+  },
+  {
+   "out": "props/pot",
+   "sheet": "platforms",
+   "box": [
+    1115,
+    612,
+    1346,
+    872
+   ]
+  },
+  {
+   "out": "props/liane",
+   "sheet": "platforms",
+   "box": [
+    1355,
+    262,
+    1506,
+    622
+   ]
+  },
+  {
+   "out": "items/piece",
+   "sheet": "objects",
+   "box": [
+    63,
+    39,
+    361,
+    350
+   ],
+   "max_side": 256
+  },
+  {
+   "out": "items/cle",
+   "sheet": "objects",
+   "box": [
+    408,
+    27,
+    705,
+    361
+   ],
+   "max_side": 256
+  },
+  {
+   "out": "items/gemme",
+   "sheet": "objects",
+   "box": [
+    760,
+    39,
+    1028,
+    347
+   ],
+   "max_side": 256
+  },
+  {
+   "out": "items/coeur",
+   "sheet": "objects",
+   "box": [
+    1082,
+    59,
+    1401,
+    342
+   ],
+   "max_side": 256
+  },
+  {
+   "out": "items/coffre",
+   "sheet": "objects",
+   "box": [
+    33,
+    392,
+    386,
+    679
+   ]
+  },
+  {
+   "out": "items/banane_vol",
+   "sheet": "objects",
+   "box": [
+    405,
+    374,
+    720,
+    646
+   ],
+   "max_side": 256
+  },
+  {
+   "out": "items/pierre_vol",
+   "sheet": "objects",
+   "box": [
+    726,
+    408,
+    1049,
+    658
+   ],
+   "max_side": 256,
+   "keep_parts": true
+  },
+  {
+   "out": "items/gourde",
+   "sheet": "objects",
+   "box": [
+    1099,
+    361,
+    1419,
+    681
+   ],
+   "max_side": 256
+  },
+  {
+   "out": "items/bouclier",
+   "sheet": "objects",
+   "box": [
+    6,
+    678,
+    386,
+    1053
+   ],
+   "max_side": 300
+  },
+  {
+   "out": "items/plume",
+   "sheet": "objects",
+   "box": [
+    395,
+    698,
+    699,
+    1054
+   ],
+   "max_side": 256
+  },
+  {
+   "out": "items/parchemin",
+   "sheet": "objects",
+   "box": [
+    713,
+    697,
+    1074,
+    1043
+   ],
+   "max_side": 300
+  },
+  {
+   "out": "items/lanterne",
+   "sheet": "objects",
+   "box": [
+    1174,
+    688,
+    1370,
+    1052
+   ]
+  },
+  {
+   "out": "props/feuilles_a",
+   "sheet": "platforms",
+   "box": [
+    676,
+    312,
+    913,
+    430
+   ]
+  },
+  {
+   "out": "props/feuilles_b",
+   "sheet": "platforms",
+   "box": [
+    930,
+    358,
+    1141,
+    512
+   ]
+  }
+ ]
 }

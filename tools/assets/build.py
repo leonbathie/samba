@@ -333,6 +333,12 @@ def build_extras(pack, models, names):
         keep = cv2.morphologyEx(keep, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
         keep = cv2.morphologyEx(keep, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
         alpha = cv2.GaussianBlur(keep.astype(np.float32), (0, 0), 1.0)
+        if ch.get("ellipse"):
+            # soft oval falloff: the strip blends into the scene instead of ending on straight cuts
+            hh, ww = alpha.shape
+            yy, xx = np.mgrid[0:hh, 0:ww].astype(np.float32)
+            d = np.sqrt(((xx - ww / 2) / (ww / 2)) ** 2 + ((yy - hh * 0.42) / (hh * 0.62)) ** 2)
+            alpha = alpha * np.clip((1.0 - d) / 0.32, 0, 1)
         fade = float(ch.get("fade_bottom", 0))
         if fade > 0:
             h = alpha.shape[0]

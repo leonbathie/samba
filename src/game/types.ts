@@ -65,6 +65,8 @@ export interface WaterDef {
   x1: number;
   /** Niveau de la surface. */
   y: number;
+  /** Eau déjà peinte dans le décor (intérieurs) : la chute est détectée mais rien n'est dessiné. */
+  hidden?: boolean;
 }
 
 export interface DecorDef {
@@ -102,6 +104,8 @@ export interface ItemDef {
   flag?: string;
   /** Teinte (gemmes de couleurs différentes). */
   tint?: number;
+  /** Message affiché au ramassage ; {n} est remplacé par la valeur du drapeau. */
+  toast?: string;
 }
 
 export interface ChestDef {
@@ -214,6 +218,8 @@ export interface ThemeDef {
   water: { shallow: number; deep: number; glint: number };
   music: MusicTheme;
   ambience: Ambience[];
+  /** Altitude à laquelle le ciel recouvre entièrement le paysage (niveaux en hauteur). */
+  skyAt?: number;
   /** Lucioles et ambiance de nuit. */
   night?: boolean;
   /** Teinte appliquée aux personnages et décors proches (nuit). */

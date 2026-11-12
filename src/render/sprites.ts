@@ -16,7 +16,7 @@ export interface SpriteOpts {
   opacity?: number;
   color?: number;
   additive?: boolean;
-  /** Ordre de dessin à profondeur égale. */
+  /** Conservé pour compatibilité : l'ordre de dessin suit uniquement la profondeur (z). */
   order?: number;
   bottom?: boolean;
   flip?: boolean;
@@ -41,7 +41,6 @@ export function spriteMaterial(tex: THREE.Texture, o: SpriteOpts = {}): THREE.Me
 export function makeSprite(tex: THREE.Texture, w: number, h: number, o: SpriteOpts = {}): THREE.Mesh {
   const mesh = new THREE.Mesh(o.bottom ? QUAD_BOTTOM : QUAD, spriteMaterial(tex, o));
   mesh.scale.set(o.flip ? -w : w, h, 1);
-  if (o.order !== undefined) mesh.renderOrder = o.order;
   return mesh;
 }
 
@@ -211,4 +210,86 @@ export class Particles {
     this.list.length = 0;
     this.mesh.count = 0;
   }
+}
+
+/** Nuage doux dessiné sur un canevas (ciel des niveaux en hauteur). */
+export function cloudTexture(): THREE.Texture {
+  const c = document.createElement('canvas');
+  c.width = 384;
+  c.height = 192;
+  const g = c.getContext('2d')!;
+  const puffs: [number, number, number][] = [
+    [90, 120, 62], [150, 92, 78], [215, 104, 84], [285, 122, 60], [190, 132, 70], [120, 138, 50], [250, 140, 52],
+  ];
+  for (const [x, y, r] of puffs) {
+    const grad = g.createRadialGradient(x, y - r * 0.2, r * 0.15, x, y, r);
+    grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+    grad.addColorStop(0.6, 'rgba(255,246,238,0.7)');
+    grad.addColorStop(1, 'rgba(255,236,226,0)');
+    g.fillStyle = grad;
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** Écorce de baobab dessinée sur un canevas : plaques d'écorce décalées, répétable dans les deux sens. */
+export function barkTexture(): THREE.Texture {
+  const W = 256;
+  const H = 512;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#5e3415';
+  g.fillRect(0, 0, W, H);
+  let seed = 77;
+  const r = (): number => {
+    seed = (seed * 16807) % 2147483647;
+    return seed / 2147483647;
+  };
+  const cols = 6;
+  const cw = W / cols;
+  for (let i = 0; i < cols; i++) {
+    let y = -r() * 120;
+    while (y < H) {
+      const h = 70 + r() * 90;
+      const x = i * cw + 3 + r() * 3;
+      const w = cw - 6 - r() * 4;
+      for (const oy of [0, -H, H]) {
+        const grad = g.createLinearGradient(x, 0, x + w, 0);
+        grad.addColorStop(0, '#d08a3e');
+        grad.addColorStop(0.45, '#a9662b');
+        grad.addColorStop(1, '#7a4419');
+        g.fillStyle = grad;
+        g.strokeStyle = '#3d1f0b';
+        g.lineWidth = 3;
+        g.beginPath();
+        g.roundRect(x, y + oy, w, h, 12);
+        g.fill();
+        g.stroke();
+        g.strokeStyle = 'rgba(255,196,110,0.5)';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(x + 7, y + oy + h - 14);
+        g.lineTo(x + 7, y + oy + 12);
+        g.quadraticCurveTo(x + 8, y + oy + 6, x + 16, y + oy + 6);
+        g.stroke();
+        g.strokeStyle = 'rgba(60,30,10,0.35)';
+        g.lineWidth = 1.5;
+        g.beginPath();
+        g.moveTo(x + w * 0.55, y + oy + h * 0.2);
+        g.lineTo(x + w * 0.5, y + oy + h * 0.8);
+        g.stroke();
+      }
+      y += h + 5;
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
 }

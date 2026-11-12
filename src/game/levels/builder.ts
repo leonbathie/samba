@@ -19,7 +19,7 @@ export const THEMES: Record<string, ThemeDef> = {
   },
   arbres: {
     backdrop: 'bg/village', sky: 0x7cc4ff, earth: 0x9a6238, water: TURQUOISE,
-    music: 'arbres', ambience: ['oiseaux', 'vent'], alignLow: 0.25, alignHigh: 1,
+    music: 'arbres', ambience: ['oiseaux', 'vent'], alignLow: 0.3, alignHigh: 1, skyAt: 46,
   },
   riviere: {
     backdrop: 'bg/riviere', sky: 0x62b4f5, earth: 0xa86a42, water: TURQUOISE,
@@ -63,14 +63,14 @@ export class LevelBuilder {
   private rand: () => number;
 
   constructor(id: string, number: number, name: string, theme: ThemeDef, o: BuildOpts) {
-    const bottom = o.bottom ?? -3.4;
+    const bottom = o.bottom ?? -2.7;
     this.deep = bottom - 9;
     this.rand = rng(number * 977 + id.length * 31 + 5);
     this.def = {
       id, number, name, kind: 'level', theme,
       bounds: { minX: 0, maxX: o.width, minY: bottom, maxY: o.top ?? 13 },
       spawn: o.spawn ?? { x: 3, y: 0.05 },
-      viewH: o.viewH ?? 10.5,
+      viewH: o.viewH ?? 9.5,
       solids: [], movers: [], climbs: [], hangs: [], waters: [], decor: [], items: [], chests: [], enemies: [],
       npcs: [], doors: [], checkpoints: [], triggers: [], targets: [], signs: [], falls: [], trunks: [],
     };
@@ -107,6 +107,12 @@ export class LevelBuilder {
   branch(x: number, y: number, w: number, trunk: 'left' | 'right' = 'left', hang = false): this {
     this.solid(x, y, w, 0.4, 'branch', { oneWay: true, flip: trunk === 'right' });
     if (hang) this.def.hangs.push({ x0: x + 0.5, x1: x + w - 0.5, y: y - 0.5 });
+    // Quelques touffes de feuilles au bout et sous la branche.
+    const tip = trunk === 'left' ? x + w - 0.5 : x + 0.5;
+    const dir = trunk === 'left' ? 1 : -1;
+    this.leaves(tip + dir * 0.5, y + 0.25, 1.2 + this.rand() * 0.5, -0.5, trunk === 'right', 'b');
+    this.leaves(tip - dir * (1.2 + this.rand() * 1.5), y - 0.55, 1.0 + this.rand() * 0.4, -0.6, this.rand() > 0.5, 'a');
+    if (w > 7) this.leaves(tip - dir * (w * 0.5), y + 0.7, 1.1, -0.7, this.rand() > 0.5, 'a');
     return this;
   }
 
@@ -251,9 +257,38 @@ export class LevelBuilder {
     return this.decor('items/lanterne', x, y, h, { z, center: true, sway: 0.05, glow: { color: 0xffb84d, size: h * 3.6 } });
   }
 
-  /** Bande de feuillage en haut de l'écran ou derrière les branches. */
+  /** Masse de feuillage : grappes de feuilles réparties dans un ovale de hauteur h. */
   foliage(x: number, y: number, h = 3, z = -2, flip = false, opacity = 1): this {
-    return this.decor('props/feuillage', x, y, h, { z, flip, opacity, sway: 0.012 });
+    const w = h * 2.4;
+    const n = Math.round(6 + h * 1.5);
+    const tint = z < -1.5 ? 0xb9d8a8 : 0xffffff;
+    for (let i = 0; i < n; i++) {
+      const a = this.rand() * Math.PI * 2;
+      const k = Math.sqrt(this.rand());
+      this.def.decor.push({
+        img: this.rand() > 0.5 ? 'props/feuilles_a' : 'props/feuilles_b',
+        x: x + Math.cos(a) * k * w * 0.5,
+        y: y + h * 0.5 + Math.sin(a) * k * h * 0.5,
+        h: 1.2 + this.rand() * 1.1,
+        z: z - this.rand() * 0.3,
+        flip: flip !== this.rand() > 0.5,
+        center: true,
+        opacity,
+        tint,
+        sway: 0.02 + this.rand() * 0.02,
+      });
+    }
+    return this;
+  }
+
+  /** Touffe de feuilles (deux variantes), pour habiller les branches. */
+  leaves(x: number, y: number, h = 1.3, z = -0.4, flip = false, variant: 'a' | 'b' = 'a'): this {
+    return this.decor('props/feuilles_' + variant, x, y, h, { z, flip, center: true, sway: 0.03 });
+  }
+
+  /** Nuage doux, dessiné par le code. */
+  cloud(x: number, y: number, h = 2.4, z = -30): this {
+    return this.decor('fx/nuage', x, y, h, { z, center: true, opacity: 0.9, fly: { speed: 0.35, range: 40, bob: 0.2 } });
   }
 
   lily(x: number, y: number, h = 0.32): this {
@@ -327,6 +362,18 @@ export class RoomBuilder extends LevelBuilder {
   /** Plancher invisible posé sur le sol peint, entre deux pixels. */
   floor(x0: number, x1: number, y: number, thick = 60, oneWay = false): this {
     this.solid(this.px(x0), this.py(y), this.px(x1 - x0), thick / this.ppu, 'none', { oneWay });
+    return this;
+  }
+
+  /** Échelle ou liane peinte dans le tableau : zone d'escalade sans image. */
+  climbPx(x: number, yTop: number, yBottom: number): this {
+    this.def.climbs.push({ x: this.px(x), y0: this.py(yBottom), y1: this.py(yTop), style: 'none' });
+    return this;
+  }
+
+  /** Bassin peint dans le tableau : y tomber fait perdre un cœur. */
+  poolPx(x0: number, x1: number, y: number): this {
+    this.def.waters.push({ x0: this.px(x0), x1: this.px(x1), y: this.py(y), hidden: true });
     return this;
   }
 

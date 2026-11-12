@@ -509,10 +509,15 @@
    "w": 591,
    "h": 489
   },
-  "props/feuillage": {
-   "file": "props/feuillage.webp",
-   "w": 626,
-   "h": 213
+  "props/feuilles_a": {
+   "file": "props/feuilles_a.webp",
+   "w": 245,
+   "h": 123
+  },
+  "props/feuilles_b": {
+   "file": "props/feuilles_b.webp",
+   "w": 215,
+   "h": 163
   },
   "props/grue_vol": {
    "file": "props/grue_vol.webp",
@@ -603,16 +608,6 @@
    "file": "rooms/temple.webp",
    "w": 1672,
    "h": 941
-  },
-  "tex/ecorce": {
-   "file": "tex/ecorce.webp",
-   "w": 416,
-   "h": 416
-  },
-  "tex/terre": {
-   "file": "tex/terre.webp",
-   "w": 800,
-   "h": 93
   }
  }
 }
