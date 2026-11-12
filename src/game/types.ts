@@ -158,6 +158,8 @@ export interface NpcDef {
   when?: (g: Game) => boolean;
   /** Clé de traduction de l'invite (par défaut « Parler »). */
   prompt?: string;
+  /** Courte échelle : vitesse verticale donnée au héros par ce personnage (utilisée aussi par les tests). */
+  boost?: number;
 }
 
 export interface DoorDef {

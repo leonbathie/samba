@@ -6,6 +6,9 @@
 import type { LevelDef } from '../types';
 import { LevelBuilder, THEMES } from './builder';
 
+/** Élan donné par la courte échelle de Coumba. */
+export const COURTE_ECHELLE = 16.8;
+
 export function niveau4(): LevelDef {
   const b = new LevelBuilder('savane', 4, 'level.4', THEMES.savane, { width: 200, spawn: { x: 3, y: 0.05 } });
 
@@ -26,7 +29,7 @@ export function niveau4(): LevelDef {
   b.lily(100, -1.2).lily(106, -1.2, 0.27);
 
   // ---- pièces et objets
-  b.coins(12, 1.1, 5).arc(27.5, 31.5, 1.4, 1.6, 4).coins(34, 3.1, 4).arc(41.5, 45.5, 3.4, 1.6, 4).coins(47, 5.1, 3);
+  b.coins(12, 1.1, 5).coins(27.6, 1.3, 4, 1.0, 0.6).coins(34, 3.1, 4).coins(41.6, 3.3, 4, 1.0, 0.6).coins(47, 5.1, 3);
   b.arc(57.6, 63.8, 4.6, 1.2, 6).coins(67, 4.1, 4).coins(84, 1.1, 5).arc(96.5, 109.5, 1.6, 1.2, 8);
   b.coins(113, 2.6, 4).coins(125.2, 3.0, 4, 0, 0.9).coins(130, 6.3, 6).coins(152, 4.5, 2).coins(158, 2.8, 2).coins(166, 1.1, 6);
   b.item('pile', 16, 0.45).item('pile', 46, 4.45).item('heart', 60.8, 4.4).item('pile', 84.6, 0.45);
@@ -73,7 +76,7 @@ export function niveau4(): LevelDef {
 
   // ---- courte échelle au pied de la haute falaise
   b.npc({
-    id: 'echelle', char: 'amie', ghost: true, x: 124.9, y: 1.5, promptY: 2.4, reach: 1.1, prompt: 'prompt.boost',
+    id: 'echelle', char: 'amie', ghost: true, x: 124.9, y: 1.5, promptY: 2.4, reach: 1.1, prompt: 'prompt.boost', boost: COURTE_ECHELLE,
     talk: async (g) => {
       const stage = g.stage!;
       if (!g.has('echelleVue')) {
@@ -81,7 +84,7 @@ export function niveau4(): LevelDef {
         await g.say('coumba', 'dlg.coumba.echelle');
       }
       stage.companion?.celebrate(1.4);
-      stage.player.boost(16.8);
+      stage.player.boost(COURTE_ECHELLE);
     },
   });
   b.trigger('adieu', 186, 190, async (g, stage) => {

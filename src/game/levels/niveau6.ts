@@ -12,7 +12,7 @@ import { t } from '../../i18n';
 export function niveau6(): LevelDef {
   const b = new LevelBuilder('grotte', 6, 'level.6', THEMES.grotte, { width: 128, spawn: { x: 3, y: 0.05 } });
   const W = -1.2;
-  b.water(18, 110, W);
+  b.water(0, 128, W);
 
   // ---- terrain
   b.ground(0, 20);

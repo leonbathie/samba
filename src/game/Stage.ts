@@ -12,6 +12,7 @@ import { createEnemy, type Enemy } from './enemies';
 import { Backdrop, SkyVeil, makeEarth, makeTrunk, makeWater, makeWaterfall } from '../render/scenery';
 import { glowSprite, imageSprite, makeSprite, Particles, QUAD } from '../render/sprites';
 import { clamp, damp, rng } from '../core/math';
+import { HANG_REACH } from './tuning';
 import { t } from '../i18n';
 import type { Action } from '../core/Input';
 
@@ -388,7 +389,7 @@ export class Stage {
 
   hangAt(x: number, hands: number): HangDef | null {
     for (const h of this.def.hangs) {
-      if (x >= h.x0 && x <= h.x1 && Math.abs(hands - h.y) < 0.3) return h;
+      if (x >= h.x0 && x <= h.x1 && Math.abs(hands - h.y) < HANG_REACH) return h;
     }
     return null;
   }
@@ -423,7 +424,7 @@ export class Stage {
     let bd = range;
     const consider = (x: number, y: number): void => {
       const dx = (x - ox) * facing;
-      if (dx < 0.3) return;
+      if (dx < 0.05) return;
       const d = Math.hypot(x - ox, y - oy);
       if (d < bd) {
         bd = d;
@@ -445,7 +446,7 @@ export class Stage {
     const disc = v2 * v2 - grav * (grav * dx * dx + 2 * dy * v2);
     if (disc < 0) return null;
     const ang = Math.atan((v2 - Math.sqrt(disc)) / (grav * dx));
-    return ang > -0.9 && ang < 1.25 ? ang : null;
+    return ang > -0.9 && ang < 1.48 ? ang : null;
   }
 
   // ------------------------------------------------------------------ effets et apparitions

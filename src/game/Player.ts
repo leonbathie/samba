@@ -11,21 +11,12 @@ import { HERO } from './characterDefs';
 import { approach, clamp, damp, lerp, smooth } from '../core/math';
 import type { Weapon } from '../core/Save';
 
-const GRAV = 32;
-const MAX_FALL = 21;
-const STAND_H = 1.5;
-const CROUCH_H = 0.9;
-
-/** Réglages de déplacement : dehors (course, grand saut) et dans les intérieurs (marche, petit saut). */
-const MOVE = {
-  out: { walk: 3.6, run: 6.4, jump: 13.2, acc: 46, dec: 60, air: 30, climb: 3.3 },
-  in: { walk: 1.7, run: 2.3, jump: 7.6, acc: 30, dec: 40, air: 18, climb: 1.8 },
-};
+import { CROUCH_H, GRAV, HANG_PULL, HANG_SPEED, MAX_FALL, MOVE, PLAYER_W, STAND_H, VINE_JUMP, VINE_RUN } from './tuning';
 
 export type PlayerState = 'normal' | 'climb' | 'hang' | 'hurt' | 'locked' | 'gone';
 
 export class Player {
-  readonly body: Body = makeBody(0, 0, 0.62, STAND_H);
+  readonly body: Body = makeBody(0, 0, PLAYER_W, STAND_H);
   readonly view: CharacterView;
   facing: 1 | -1 = 1;
   state: PlayerState = 'normal';
@@ -305,8 +296,8 @@ export class Player {
       this.climb = null;
       this.climbing = false;
       this.grabLock = 0.28;
-      b.vy = mv.jump * 0.82;
-      b.vx = ax * mv.run * 0.85;
+      b.vy = mv.jump * VINE_JUMP;
+      b.vx = ax * mv.run * VINE_RUN;
       this.game.audio.sfx('jump');
     }
   }
@@ -317,7 +308,7 @@ export class Player {
     b.vy = 0;
     b.onGround = false;
     b.ground = null;
-    b.vx = ax * 2.7;
+    b.vx = ax * HANG_SPEED;
     b.x = clamp(b.x + b.vx * dt, h.x0, h.x1);
     b.y = h.y - STAND_H;
     this.climbing = ax !== 0;
@@ -329,7 +320,7 @@ export class Player {
       this.climbing = false;
       this.grabLock = 0.35;
       // Saut : on se hisse au-dessus de la branche ; bas : on se laisse tomber.
-      b.vy = up ? mv.jump * 0.9 : -1;
+      b.vy = up ? mv.jump * HANG_PULL : -1;
       if (up) {
         this.fullJump = 0.5;
         this.game.audio.sfx('jump');
