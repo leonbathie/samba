@@ -176,31 +176,41 @@ export function earthTexture(): THREE.Texture {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const g = c.getContext('2d')!;
-  g.fillStyle = '#8a8a8a';
+  g.fillStyle = '#a2a2a2';
   g.fillRect(0, 0, size, size);
   const r = rng(4242);
-  // Blocs de pierre irréguliers.
-  for (let i = 0; i < 46; i++) {
+  // Pierres arrondies, peu contrastées : la terre doit rester discrète sous les bordures peintes.
+  for (let i = 0; i < 40; i++) {
     const x = r() * size;
     const y = r() * size;
-    const w = 26 + r() * 46;
-    const h = 18 + r() * 30;
-    const v = 105 + Math.floor(r() * 70);
+    const w = 30 + r() * 52;
+    const h = 20 + r() * 30;
+    const v = 138 + Math.floor(r() * 44);
     g.fillStyle = `rgb(${v},${v},${v})`;
-    g.strokeStyle = 'rgba(40,40,40,0.55)';
-    g.lineWidth = 2.5;
+    g.strokeStyle = 'rgba(70,70,70,0.32)';
+    g.lineWidth = 2;
     for (const ox of [-size, 0, size]) {
       for (const oy of [-size, 0, size]) {
         g.beginPath();
-        g.roundRect(x + ox, y + oy, w, h, 7);
+        g.roundRect(x + ox, y + oy, w, h, 9);
         g.fill();
         g.stroke();
       }
     }
   }
-  for (let i = 0; i < 900; i++) {
-    const v = 60 + Math.floor(r() * 150);
-    g.fillStyle = `rgba(${v},${v},${v},0.25)`;
+  for (let i = 0; i < 26; i++) {
+    const x = r() * size;
+    const y = r() * size;
+    const rad = 14 + r() * 26;
+    const grad = g.createRadialGradient(x, y, 0, x, y, rad);
+    grad.addColorStop(0, 'rgba(60,60,60,0.22)');
+    grad.addColorStop(1, 'rgba(60,60,60,0)');
+    g.fillStyle = grad;
+    g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+  }
+  for (let i = 0; i < 500; i++) {
+    const v = 90 + Math.floor(r() * 120);
+    g.fillStyle = `rgba(${v},${v},${v},0.2)`;
     g.fillRect(r() * size, r() * size, 1 + r() * 2.5, 1 + r() * 2.5);
   }
   earthTex = new THREE.CanvasTexture(c);
@@ -223,7 +233,7 @@ export function makeEarth(x0: number, y0: number, x1: number, y1: number, color:
     const top = uv.getY(i) > 0.5;
     const left = uv.getX(i) < 0.5;
     uv.setXY(i, (left ? x0 : x1) / tile, (top ? y1 : y0) / tile);
-    const shade = top ? 1.25 : Math.max(0.3, 1.25 - h * 0.22);
+    const shade = top ? 0.95 : Math.max(0.3, 0.95 - h * 0.2);
     cols[i * 3] = base.r * shade;
     cols[i * 3 + 1] = base.g * shade;
     cols[i * 3 + 2] = base.b * shade;
@@ -279,7 +289,7 @@ export function makeRays(w: number, h: number, color = 0xfff0b0, opacity = 0.22)
 export function makeTrunk(x: number, w: number, y0: number, y1: number, tex: THREE.Texture, tint = 0xffffff): THREE.Mesh {
   const h = y1 - y0;
   const bark = tex.clone();
-  bark.wrapS = bark.wrapT = THREE.MirroredRepeatWrapping;
+  bark.wrapS = bark.wrapT = THREE.RepeatWrapping;
   bark.needsUpdate = true;
   const geo = new THREE.PlaneGeometry(w, h, 4, 1);
   const uv = geo.attributes.uv;
@@ -287,7 +297,7 @@ export function makeTrunk(x: number, w: number, y0: number, y1: number, tex: THR
   const base = new THREE.Color(tint);
   for (let i = 0; i < uv.count; i++) {
     const u = uv.getX(i);
-    uv.setXY(i, u * (w / 3.2), uv.getY(i) * (h / 3.2));
+    uv.setXY(i, u * (w / 3.4), uv.getY(i) * (h / 6.8));
     const shade = 0.5 + 0.62 * Math.sin(u * Math.PI);
     cols[i * 3] = base.r * shade;
     cols[i * 3 + 1] = base.g * shade;
@@ -299,4 +309,44 @@ export function makeTrunk(x: number, w: number, y0: number, y1: number, tex: THR
   mesh.position.set(x + w / 2, (y0 + y1) / 2, -0.7);
   mesh.renderOrder = -6;
   return mesh;
+}
+
+/**
+ * Voile de ciel : dégradé plaqué devant l'arrière-plan, de plus en plus opaque quand on monte.
+ * Il donne la sensation d'altitude dans les niveaux verticaux.
+ */
+export class SkyVeil {
+  static readonly Z = -52;
+  readonly mesh: THREE.Mesh;
+  private mat: THREE.MeshBasicMaterial;
+
+  constructor(top: number, bottom: number) {
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 256;
+    const g = c.getContext('2d')!;
+    const a = new THREE.Color(top);
+    const b = new THREE.Color(bottom);
+    const css = (col: THREE.Color, alpha: number): string =>
+      `rgba(${Math.round(col.r * 255)},${Math.round(col.g * 255)},${Math.round(col.b * 255)},${alpha})`;
+    const grad = g.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, css(a, 1));
+    grad.addColorStop(0.55, css(b, 0.95));
+    grad.addColorStop(1, css(b, 0.55));
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 4, 256);
+    const tex = new THREE.CanvasTexture(c);
+    this.mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
+    this.mesh = new THREE.Mesh(QUAD, this.mat);
+    this.mesh.position.z = SkyVeil.Z;
+    this.mesh.frustumCulled = false;
+  }
+
+  update(view: View, amount: number): void {
+    const vis = view.sizeAt(SkyVeil.Z);
+    this.mesh.scale.set(vis.w * 1.05, vis.h * 1.05, 1);
+    this.mesh.position.x = view.camX;
+    this.mesh.position.y = view.camY;
+    this.mat.opacity = clamp(amount, 0, 1) * 0.88;
+  }
 }

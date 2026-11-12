@@ -249,6 +249,7 @@ export class Game {
         break;
       case 'quest':
         if (def.flag) this.addFlag(def.flag);
+        if (def.toast) this.ui.toast(t(def.toast, { n: def.flag ? this.flag(def.flag) : 0 }), def.img);
         this.audio.sfx('secret');
         break;
     }

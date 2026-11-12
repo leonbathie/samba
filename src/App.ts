@@ -15,6 +15,7 @@ import { Game } from './game/Game';
 import { LEVELS } from './game/levels';
 import { Ui, type UiHost } from './ui/Ui';
 import { setLang, t } from './i18n';
+import { barkTexture, cloudTexture } from './render/sprites';
 
 const STEP = 1 / 60;
 
@@ -55,6 +56,8 @@ export class App implements UiHost {
     }
     this.assets.maxAnisotropy = this.view.maxAnisotropy;
     await this.assets.loadManifest();
+    this.assets.register('fx/nuage', cloudTexture(), 384, 192);
+    this.assets.register('fx/ecorce', barkTexture(), 256, 512);
     const params = new URLSearchParams(location.search);
     await this.models.load(params.get('modeles') ?? 'models.json');
     this.ui = new Ui(root, this.save, this.input, this.audio, this.assets, this);

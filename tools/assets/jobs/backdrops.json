@@ -911,43 +911,6 @@
    ]
   }
  ],
- "textures": [
-  {
-   "out": "tex/ecorce",
-   "src": "04_Decors_et_Objets/01_Decor_baobabs_et_village.png",
-   "scale": 1.1943,
-   "crop": [
-    18,
-    300,
-    192,
-    474
-   ],
-   "upscale": 2
-  },
-  {
-   "out": "tex/terre",
-   "src": "04_Decors_et_Objets/01_Decor_baobabs_et_village.png",
-   "scale": 1.1943,
-   "crop": [
-    330,
-    612,
-    1000,
-    690
-   ]
-  }
- ],
- "chroma": [
-  {
-   "out": "props/feuillage",
-   "src": "04_Decors_et_Objets/01_Decor_baobabs_et_village.png",
-   "scale": 1.1943,
-   "crop": [
-    125,
-    0,
-    652,
-    178
-   ],
-   "fade_bottom": 0.18
-  }
- ]
+ "textures": [],
+ "chroma": []
 }

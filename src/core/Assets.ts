@@ -23,6 +23,7 @@ export class Assets {
   private loader = new THREE.TextureLoader();
   private placeholder: THREE.Texture | null = null;
   maxAnisotropy = 1;
+  private generated = new Set<string>();
 
   constructor(base = './assets/') {
     this.base = base;
@@ -39,6 +40,13 @@ export class Assets {
       this.missing.push('manifest.json');
       this.images = {};
     }
+  }
+
+  /** Enregistre une image dessinée par le code (nuages…) : elle s'utilise comme une image du manifeste. */
+  register(id: string, tex: THREE.Texture, w: number, h: number): void {
+    this.images[id] = { file: '', w, h };
+    this.textures.set(id, tex);
+    this.generated.add(id);
   }
 
   has(id: string): boolean {
@@ -134,7 +142,7 @@ export class Assets {
   /** Libère les textures qui ne font pas partie de la liste à conserver (changement de niveau). */
   release(keep: Set<string>): void {
     for (const [id, tex] of this.textures) {
-      if (keep.has(id) || tex === this.placeholder) continue;
+      if (keep.has(id) || tex === this.placeholder || this.generated.has(id)) continue;
       tex.dispose();
       this.textures.delete(id);
     }

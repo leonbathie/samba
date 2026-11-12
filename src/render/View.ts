@@ -12,11 +12,11 @@ export class View {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   /** Hauteur visible du plan de jeu, en unités du monde. */
-  viewH = 10.5;
+  viewH = 9.5;
   aspect = 16 / 9;
   camX = 0;
   camY = 0;
-  private wantedH = 10.5;
+  private wantedH = 9.5;
   private minW = 13;
   /** Intérieurs : la vue est ajustée pour que le tableau peint remplisse l'écran sans déborder. */
   private fit: { w: number; h: number } | null = null;

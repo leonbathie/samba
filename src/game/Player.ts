@@ -50,10 +50,13 @@ export class Player {
   private runT = 0;
   private stepT = 0;
   private grabLock = 0;
+  /** Saut « complet » (se hisser sur une branche) : la hauteur ne dépend pas de la durée d'appui. */
+  private fullJump = 0;
   private climb: ClimbDef | null = null;
   private hang: HangDef | null = null;
   private climbing = false;
   private noAmmoHint = 0;
+  private pendingBoost = 0;
 
   constructor(private game: Game, private stage: Stage) {
     this.view = new CharacterView(game.assets, HERO, game.models);
@@ -87,6 +90,11 @@ export class Player {
     this.hang = null;
     this.lastSafe = { x, y };
     this.sync();
+  }
+
+  /** Propulsion vers le haut (courte échelle) : appliquée dès que le héros est de nouveau libre. */
+  boost(speed: number): void {
+    this.pendingBoost = speed;
   }
 
   lock(on: boolean): void {
@@ -125,6 +133,7 @@ export class Player {
     this.guardCd = Math.max(0, this.guardCd - dt);
     this.landT = Math.max(0, this.landT - dt);
     this.grabLock = Math.max(0, this.grabLock - dt);
+    this.fullJump = Math.max(0, this.fullJump - dt);
     this.noAmmoHint = Math.max(0, this.noAmmoHint - dt);
     this.postT = Math.max(0, this.postT - dt);
 
@@ -147,6 +156,15 @@ export class Player {
       return;
     }
 
+    if (this.pendingBoost > 0 && this.state === 'normal') {
+      b.vy = this.pendingBoost;
+      b.onGround = false;
+      this.pendingBoost = 0;
+      this.fullJump = 0.7;
+      this.coyote = 0;
+      g.audio.sfx('jump');
+      this.stage.dust(b.x, b.y, 8);
+    }
     const ax = input.axisX();
     const ay = input.axisY();
     if (ax !== 0) this.facing = ax > 0 ? 1 : -1;
@@ -212,7 +230,7 @@ export class Player {
       }
     }
     let grav = GRAV;
-    if (b.vy > 0 && !input.isDown('jump')) grav *= 2.3;
+    if (b.vy > 0 && !input.isDown('jump') && this.fullJump <= 0) grav *= 2.3;
     b.vy = Math.max(b.vy - grav * dt, -MAX_FALL);
     moveBody(b, this.stage.solids, dt);
 
@@ -234,9 +252,10 @@ export class Player {
     }
 
     // Suspension à une branche : en l'air, mains à hauteur de la branche.
-    if (!b.onGround && this.grabLock <= 0 && b.vy < 5 && !this.crouch) {
+    if (!b.onGround && this.grabLock <= 0 && !this.crouch) {
       const h = this.stage.hangAt(b.x, b.y + STAND_H);
-      if (h && (ay > 0 || b.vy > 0.5)) {
+      // On attrape la branche en montant, ou en retombant si l'on tient « haut » (ou si la chute est lente).
+      if (h && (b.vy > 0 || ay > 0 || b.vy > -6)) {
         this.state = 'hang';
         this.hang = h;
         b.vx = b.vy = 0;
@@ -311,7 +330,10 @@ export class Player {
       this.grabLock = 0.35;
       // Saut : on se hisse au-dessus de la branche ; bas : on se laisse tomber.
       b.vy = up ? mv.jump * 0.9 : -1;
-      if (up) this.game.audio.sfx('jump');
+      if (up) {
+        this.fullJump = 0.5;
+        this.game.audio.sfx('jump');
+      }
     }
   }
 
