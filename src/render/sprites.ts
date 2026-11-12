@@ -8,6 +8,9 @@ import type { Assets } from '../core/Assets';
 export const QUAD = new THREE.PlaneGeometry(1, 1);
 /** Plan unité dont l'origine est en bas au centre (pieds d'un personnage, base d'un décor). */
 export const QUAD_BOTTOM = new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0);
+// Géométries partagées par tous les plans : elles ne doivent jamais être libérées avec un niveau.
+QUAD.userData.shared = true;
+QUAD_BOTTOM.userData.shared = true;
 
 export interface SpriteOpts {
   opacity?: number;

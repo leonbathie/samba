@@ -15,6 +15,7 @@ export type SolidStyle =
   | 'pilotis' // plateforme de bois sur pilotis
   | 'gue' // pierre de gué
   | 'pirogue'
+  | 'ile' // îlot rocheux flottant
   | 'earth' // bloc de terre sans bordure
   | 'none'; // collision seule (intérieurs peints)
 
@@ -151,6 +152,8 @@ export interface NpcDef {
   promptY?: number;
   /** Présent seulement si la condition est vraie. */
   when?: (g: Game) => boolean;
+  /** Clé de traduction de l'invite (par défaut « Parler »). */
+  prompt?: string;
 }
 
 export interface DoorDef {
@@ -249,6 +252,8 @@ export interface LevelDef {
   signs: SignDef[];
   /** Cascades animées : x, y = centre haut. */
   falls: { x: number; y: number; w: number; h: number; z?: number; opacity?: number }[];
+  /** Grands troncs d'arbre dessinés derrière le plan de jeu (niveau des arbres). */
+  trunks: { x: number; w: number; y0: number; y1: number }[];
   /** Position de la sortie du niveau. */
   exit?: { x: number; y: number; canLeave?: (g: Game) => boolean; lockedText?: string };
   /** La jeune amie accompagne le héros dans ce niveau à partir de ce point. */

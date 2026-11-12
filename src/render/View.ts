@@ -18,6 +18,8 @@ export class View {
   camY = 0;
   private wantedH = 10.5;
   private minW = 13;
+  /** Intérieurs : la vue est ajustée pour que le tableau peint remplisse l'écran sans déborder. */
+  private fit: { w: number; h: number } | null = null;
   private canvas: HTMLCanvasElement;
   private shakeT = 0;
   private shakeAmp = 0;
@@ -67,11 +69,20 @@ export class View {
   setViewHeight(h: number, minW = 13): void {
     this.wantedH = h;
     this.minW = minW;
+    this.fit = null;
+    this.applyViewHeight();
+  }
+
+  /** Vue d'un intérieur de largeur w et de hauteur h : jamais plus grande que la pièce. */
+  setViewFit(w: number, h: number): void {
+    this.fit = { w, h };
     this.applyViewHeight();
   }
 
   private applyViewHeight(): void {
-    this.viewH = Math.max(this.wantedH, this.minW / this.aspect);
+    this.viewH = this.fit
+      ? Math.min(this.fit.h, this.fit.w / this.aspect)
+      : Math.max(this.wantedH, this.minW / this.aspect);
     this.camera.aspect = this.aspect;
     this.camera.updateProjectionMatrix();
     this.place();

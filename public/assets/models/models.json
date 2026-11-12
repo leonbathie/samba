@@ -1,0 +1,4 @@
+{
+  "_lisez_moi": "Déclarez ici les modèles 3D (GLB) des personnages. Tant qu'un personnage n'a pas d'entrée, le jeu affiche sa représentation provisoire (image de référence). Voir docs/MODELES_3D.md.",
+  "characters": {}
+}
