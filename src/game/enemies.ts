@@ -16,7 +16,7 @@ import type { EnemyDef, EnemyKind } from './types';
 import { type Body, groundBelow, makeBody, moveBody, wallAhead } from './physics';
 import { CharacterView } from '../render/characters';
 import { ENEMIES } from './characterDefs';
-import { makeSprite } from '../render/sprites';
+import { ContactShadow, makeSprite } from '../render/sprites';
 import { approach, clamp } from '../core/math';
 
 let alertTex: THREE.Texture | null = null;
@@ -68,6 +68,7 @@ export abstract class Enemy {
   private opacity = 1;
   protected yOff = 0;
   protected tilt = 0;
+  private shadow: ContactShadow | null = null;
 
   constructor(protected game: Game, protected stage: Stage, readonly def: EnemyDef, w: number, h: number) {
     this.body = makeBody(def.x, def.y, w, h);
@@ -81,6 +82,10 @@ export abstract class Enemy {
     const c = new THREE.Color(stage.lightColor);
     this.view.setTint(c.r, c.g, c.b);
     stage.root.add(this.view.root);
+    if (def.kind !== 'croc') {
+      this.shadow = new ContactShadow({ singe: 0.75, serpent: 1.0, hyene: 1.25, phaco: 1.3, croc: 1 }[def.kind]);
+      stage.root.add(this.shadow.mesh);
+    }
     this.alert = makeSprite(alertTexture(), 0.55, 0.55, { order: 30 });
     this.alert.visible = false;
     stage.root.add(this.alert);
@@ -190,8 +195,16 @@ export abstract class Enemy {
     this.view.setFacing(this.facing);
     this.view.setOpacity(this.opacity);
     this.view.update(dt, { vx: b.vx, vy: b.vy, moving: Math.abs(b.vx) > 0.3 });
+    // Pieds posés sur le vrai dessus de la branche ou du muret.
+    const support = this.gravity ? (b.onGround ? b.ground : null) : this.kind === 'croc' ? null : this.stage.solidAt(b.x, b.y);
+    const off = this.stage.surfaceOffset(support, b.x);
     this.view.root.position.x = b.x;
-    this.view.root.position.y = b.y + this.yOff;
+    this.view.root.position.y = b.y + this.yOff + off;
+    if (this.shadow) {
+      const gy = support ? b.y + off : this.stage.groundBelow(b.x, b.y);
+      const k = gy === null ? 0 : support ? 1 : clamp(1 - (b.y - gy) / 3, 0, 1);
+      this.shadow.set(b.x, gy ?? b.y, 0.05, k * this.opacity);
+    }
     this.view.root.rotation.z = this.tilt * this.facing;
     this.alert.visible = this.alertOn && !this.gone;
     if (this.alert.visible) {
@@ -209,6 +222,7 @@ export abstract class Enemy {
 
   dispose(): void {
     this.view.dispose();
+    this.shadow?.dispose();
     this.alert.removeFromParent();
     (this.alert.material as THREE.Material).dispose();
   }

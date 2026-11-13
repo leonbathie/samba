@@ -231,7 +231,22 @@ def build_cutouts(pack, models, names):
         else:
             rgb_in = rgb
         sam.embed(np.ascontiguousarray(rgb_in))
-        mask, seeds = predict_parts(sam, job, s, x0, y0)
+        if job.get("parts") or job.get("pos"):
+            mask, seeds = predict_parts(sam, job, s, x0, y0)
+        else:
+            mask, seeds = np.zeros(sam.size, dtype=bool), []
+        for poly in job.get("poly", []):
+            pts = np.array([[p[0] * s - x0, p[1] * s - y0] for p in poly], dtype=np.int32)
+            tmp = np.zeros(sam.size, dtype=np.uint8)
+            cv2.fillPoly(tmp, [pts], 1)
+            mask |= tmp.astype(bool)
+            seeds.append([float(pts[:, 0].mean()), float(pts[:, 1].mean())])
+        for sub in job.get("sub", []):
+            sb = sub.get("box")
+            box = None if sb is None else [sb[0] * s - x0, sb[1] * s - y0, sb[2] * s - x0, sb[3] * s - y0]
+            logit = sam.predict([[p[0] * s - x0, p[1] * s - y0] for p in sub.get("pos", [])],
+                                [[p[0] * s - x0, p[1] * s - y0] for p in sub.get("neg", [])], box)
+            mask &= ~(cv2.dilate((logit > 0).astype(np.uint8), np.ones((7, 7), np.uint8)) > 0)
         alpha = refine_mask(mask, seeds, job)
         if sheet_alpha is not None:
             alpha = alpha * sheet_alpha
@@ -275,6 +290,35 @@ def object_mask(sam, img, obj, s):
     return full
 
 
+def water_mask(img, job, s):
+    """Mask of the water painted in a backdrop: R = calm water (ripples), G = waterfalls (flow).
+    Regions are given by hand (preview coordinates); inside them, pixels are selected by colour."""
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    H, S, V = hsv[..., 0].astype(np.int32), hsv[..., 1].astype(np.int32), hsv[..., 2].astype(np.int32)
+    h, w = img.shape[:2]
+    vmin = int(job.get("v_min", 70))
+    layers = []
+    for key, test in (
+        ("water", lambda hh, ss, vv: (hh >= 76) & (hh <= 122) & (ss > 40) & (vv > vmin)),
+        ("falls", lambda hh, ss, vv: (vv > 150) & ((ss < 120) & (hh >= 75) & (hh <= 135) | (ss < 35))),
+    ):
+        m = np.zeros((h, w), dtype=np.uint8)
+        for r in job.get(key, []):
+            x0, y0, x1, y1 = [int(round(v * s)) for v in r]
+            x0, y0, x1, y1 = max(0, x0), max(0, y0), min(w, x1), min(h, y1)
+            m[y0:y1, x0:x1] |= test(H[y0:y1, x0:x1], S[y0:y1, x0:x1], V[y0:y1, x0:x1]).astype(np.uint8)
+        m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+        n, lab, stats, _ = cv2.connectedComponentsWithStats(m)
+        keep = np.zeros_like(m)
+        for i in range(1, n):
+            if stats[i, cv2.CC_STAT_AREA] >= 300:
+                keep[lab == i] = 1
+        layers.append(cv2.GaussianBlur(keep.astype(np.float32), (0, 0), 2.0))
+    rgb = np.dstack([layers[0], layers[1], np.zeros((h, w), np.float32)])
+    rgb = cv2.resize(rgb, (w // 2, h // 2), interpolation=cv2.INTER_AREA)
+    return np.clip(rgb * 255.0 + 0.5, 0, 255).astype(np.uint8)
+
+
 def build_backdrops(pack, models, names):
     from inpainting import Lama, inpaint
     from segmentation import Sam
@@ -302,13 +346,23 @@ def build_backdrops(pack, models, names):
             d = int(job.get("dilate", 10))
             k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * d + 1, 2 * d + 1))
             mask = cv2.dilate(mask.astype(np.uint8), k).astype(bool)
-            img = inpaint(lama, img, mask)
+            img = inpaint(lama, img, mask, context=float(job.get("context", 1.8)), tile=int(job.get("tile", 640)))
         if job.get("lighten"):
             l = float(job["lighten"])
             img = (img.astype(np.float32) * (1 - l) + np.array([236, 242, 255], np.float32) * l).astype(np.uint8)
         if job.get("blur"):
             img = cv2.GaussianBlur(img, (0, 0), float(job["blur"]))
+        wm = water_mask(img, job, s) if job.get("water") or job.get("falls") else None
+        if job.get("crop_out"):
+            # Keep only part of the painting (the rest could not be reconstructed cleanly).
+            x0, y0, x1, y1 = [int(round(v * s)) for v in job["crop_out"]]
+            x1, y1 = min(img.shape[1], x1), min(img.shape[0], y1)
+            img = np.ascontiguousarray(img[y0:y1, x0:x1])
+            if wm is not None:
+                wm = np.ascontiguousarray(wm[y0 // 2:y1 // 2, x0 // 2:x1 // 2])
         save_opaque(job["out"], img, 90 if job["out"].startswith("rooms/") else 84)
+        if wm is not None:
+            save_opaque(job["out"] + "_eau", wm, 90)
 
 
 # ----------------------------------------------------------------------------- extras
@@ -352,6 +406,40 @@ def build_extras(pack, models, names):
 
 # ----------------------------------------------------------------------------- manifest & previews
 
+SURFACES = {
+    "props/branche": True, "props/plateforme_motif": True, "props/ile_flottante": True, "props/sol_pierre": True,
+    "props/pilotis": False, "props/pierre_gue": False, "props/pirogue": False,
+}
+
+
+def surface_profile(rgba, leafless, n=48, min_run=0.10):
+    """Top of the supporting surface along the image (0 = top, 1 = bottom), ignoring leaves and thin twigs."""
+    a = rgba[..., 3] > 140
+    if leafless:
+        r, g, b = (rgba[..., i].astype(np.int32) for i in range(3))
+        a &= ~((g > r * 0.95) & (g > b * 1.15))
+    h, w = a.shape
+    need = max(3, int(min_run * h))
+    out = []
+    for i in range(n):
+        x0 = int(i * w / n)
+        x1 = max(x0 + 1, int((i + 1) * w / n))
+        col = a[:, x0:x1].mean(axis=1) > 0.5
+        top, run, start = None, 0, 0
+        for y in range(h):
+            if col[y]:
+                if run == 0:
+                    start = y
+                run += 1
+                if run >= need:
+                    top = start
+                    break
+            else:
+                run = 0
+        out.append(None if top is None else round(top / h, 3))
+    return out
+
+
 def write_manifest():
     images = {}
     for d, _, files in os.walk(OUT):
@@ -370,6 +458,8 @@ def write_manifest():
                     head = a[:max(4, int(a.shape[0] * 0.14))].sum(axis=0)
                     entry["fx"] = round(float((feet * cols).sum() / max(1.0, feet.sum())) / a.shape[1], 3)
                     entry["hx"] = round(float((head * cols).sum() / max(1.0, head.sum())) / a.shape[1], 3)
+                if rel[:-5] in SURFACES:
+                    entry["surface"] = surface_profile(np.array(im.convert("RGBA")), SURFACES[rel[:-5]])
                 images[rel[:-5]] = entry
     images = dict(sorted(images.items()))
     with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as fh:

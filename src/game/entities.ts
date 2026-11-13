@@ -9,7 +9,7 @@ import type { ChestDef, DoorDef, ItemDef, ItemKind, NpcDef, TargetDef } from './
 import { type Body, makeBody, moveBody, groundBelow, wallAhead } from './physics';
 import { CharacterView } from '../render/characters';
 import { AMIE, CHARACTERS } from './characterDefs';
-import { glowSprite, imageSprite, makeSprite } from '../render/sprites';
+import { ContactShadow, glowSprite, imageSprite, makeSprite, stoolTexture } from '../render/sprites';
 import { approach, clamp } from '../core/math';
 import { t } from '../i18n';
 
@@ -349,22 +349,48 @@ export class Npc implements Interactable {
   promptY: number;
   readonly view: CharacterView | null = null;
   private busy = false;
+  private shadow: ContactShadow | null = null;
+  private facing: 1 | -1;
+  private walkDir: 1 | -1;
+  private pause: number;
+  /** Pose imposée par un script (danse de la fête) : le comportement ne la remplace pas. */
+  private forced: string | null = null;
+  private z: number;
+  private stool: THREE.Mesh | null = null;
+  private seatCx = 0;
 
   constructor(private stage: Stage, readonly def: NpcDef) {
     this.x = def.x;
     this.y = def.y;
     this.reach = def.reach ?? 1.5;
     this.promptY = def.promptY ?? 2.2;
+    this.facing = def.facing ?? 1;
+    this.walkDir = this.facing;
+    this.pause = 0.5 + Math.random() * 2.5;
+    this.z = def.z ?? -0.2;
     if (!def.ghost) {
       const cd = CHARACTERS[def.char];
       this.view = new CharacterView(stage.game.assets, cd, stage.game.models);
       this.view.setPose(def.pose ?? 'idle');
-      this.view.setFacing(def.facing ?? 1);
-      this.view.root.position.set(this.x, this.y, def.z ?? -0.2);
+      this.view.setFacing(this.facing);
       const c = new THREE.Color(stage.lightColor);
       this.view.setTint(c.r, c.g, c.b);
-      stage.root.add(this.view.root);
+      this.shadow = new ContactShadow(Math.min(1.3, Math.max(0.6, this.view.height * 0.4)));
+      stage.root.add(this.shadow.mesh, this.view.root);
+      if (cd.seat) {
+        // Personnage assis : un tabouret sous l'assise, juste derrière lui.
+        const pose = cd.poses.idle;
+        const info = stage.game.assets.info(pose.img);
+        const h = pose.h ?? 1.5;
+        const w = h * (info.w / info.h);
+        this.seatCx = ((cd.seat.x0 + cd.seat.x1) / 2 - (pose.ax ?? 0.5)) * w;
+        this.stool = makeSprite(stoolTexture(), (cd.seat.x1 - cd.seat.x0) * w, cd.seat.top * h, {
+          bottom: true, color: stage.lightColor,
+        });
+        stage.root.add(this.stool);
+      }
       if (def.promptY === undefined) this.promptY = this.view.height + 0.25;
+      this.place();
     }
   }
 
@@ -379,6 +405,8 @@ export class Npc implements Interactable {
   interact(): void {
     if (!this.def.talk || this.busy) return;
     this.busy = true;
+    // On se tourne vers le héros pour lui parler.
+    this.facing = this.stage.player.x >= this.x ? 1 : -1;
     const g = this.stage.game;
     void g.runScript(async () => {
       await this.def.talk!(g);
@@ -386,15 +414,57 @@ export class Npc implements Interactable {
   }
 
   setPose(pose: string): void {
+    this.forced = pose;
     this.view?.setPose(pose);
   }
 
-  update(dt: number): void {
-    this.view?.update(dt);
+  private place(): void {
+    if (!this.view) return;
+    const y = this.y + this.stage.groundOffsetAt(this.x, this.y);
+    this.view.root.position.set(this.x, y, this.z);
+    this.shadow?.set(this.x, y, this.z - 0.01);
+    this.stool?.position.set(this.x + this.seatCx * this.facing, y - 0.02, this.z - 0.012);
+  }
+
+  update(dt: number, simulate = true): void {
+    const v = this.view;
+    if (!v) return;
+    const p = this.stage.player;
+    const near = p.state !== 'gone' && Math.abs(p.x - this.x) < 2.6 && Math.abs(p.y - this.y) < 2.2;
+    let vx = 0;
+    let pose = this.forced ?? (this.def.chat ? 'chat' : this.def.pose ?? 'idle');
+    // Promenade : marche, s'arrête, repart ; s'immobilise quand le héros approche.
+    if (simulate && !this.forced && this.def.wander && !near && !this.busy) {
+      const [x0, x1] = this.def.wander;
+      if (this.pause > 0) {
+        this.pause -= dt;
+      } else {
+        vx = this.walkDir * 1.05;
+        this.x += vx * dt;
+        if ((this.walkDir > 0 && this.x >= x1) || (this.walkDir < 0 && this.x <= x0)) {
+          this.x = clamp(this.x, x0, x1);
+          this.walkDir = (-this.walkDir) as 1 | -1;
+          this.pause = 1.5 + Math.random() * 3;
+        }
+        this.facing = this.walkDir;
+        pose = 'walk';
+      }
+    }
+    // Les habitants regardent le héros quand il passe près d'eux.
+    if (near && vx === 0) this.facing = p.x >= this.x ? 1 : -1;
+    v.setPose(pose);
+    v.setFacing(this.facing);
+    v.update(dt, { vx, vy: 0, moving: vx !== 0 });
+    this.place();
   }
 
   dispose(): void {
     this.view?.dispose();
+    this.shadow?.dispose();
+    if (this.stool) {
+      this.stool.removeFromParent();
+      (this.stool.material as THREE.Material).dispose();
+    }
   }
 }
 
@@ -568,6 +638,8 @@ export class Companion {
   private stuck = 0;
   private throwCd = 3;
   private cheer = 0;
+  private visOff = 0;
+  private shadow = new ContactShadow(0.8);
 
   constructor(private game: Game, private stage: Stage, x: number, y: number) {
     this.view = new CharacterView(game.assets, AMIE, game.models);
@@ -657,11 +729,17 @@ export class Companion {
     this.view.setPose(pose);
     this.view.setFacing(pose === 'idle' ? (p.x >= b.x ? 1 : -1) : this.facing);
     this.view.update(dt, { vx: b.vx, vy: b.vy, moving: Math.abs(b.vx) > 0.6 });
+    const off = b.onGround ? this.stage.surfaceOffset(b.ground, b.x) : 0;
+    this.visOff += (off - this.visOff) * Math.min(1, dt * 18);
     this.view.root.position.x = b.x;
-    this.view.root.position.y = b.y;
+    this.view.root.position.y = b.y + this.visOff;
+    if (!this.shadow.mesh.parent) this.stage.root.add(this.shadow.mesh);
+    const gy = b.onGround ? b.y + this.visOff : this.stage.groundBelow(b.x, b.y);
+    this.shadow.set(b.x, gy ?? b.y, 0.04, gy === null ? 0 : b.onGround ? 1 : clamp(1 - (b.y - gy) / 4, 0, 1));
   }
 
   dispose(): void {
     this.view.dispose();
+    this.shadow.dispose();
   }
 }

@@ -53,6 +53,9 @@ export function niveau3(): LevelDef {
   b.foliage(72, 5.2, 3, -1.5).foliage(77, 6, 3, -1.8, true);
   b.bird(30, 7.6).bird(100, 8.4, 'props/oiseau', 0.9, -6, 2.6, 30).bird(150, 7.8);
 
+  // ---- habitants de la rive
+  b.walker('femme_kente', 150, 168, -1.4, 0.8).walker('enfant_garcon', 2, 14, -1.2, 1.3);
+
   // ---- pièces et objets
   b.coins(6, 1.1, 4).arc(16.5, 25.5, 1.3, 1.2, 8).coins(30, 1.1, 4);
   for (const x of [42.2, 45.8, 49.4, 53, 56.6, 60.1]) b.item('coin', x, 1.5);

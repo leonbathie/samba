@@ -72,7 +72,7 @@ export class LevelBuilder {
       spawn: o.spawn ?? { x: 3, y: 0.05 },
       viewH: o.viewH ?? 9.5,
       solids: [], movers: [], climbs: [], hangs: [], waters: [], decor: [], items: [], chests: [], enemies: [],
-      npcs: [], doors: [], checkpoints: [], triggers: [], targets: [], signs: [], falls: [], trunks: [],
+      npcs: [], doors: [], checkpoints: [], triggers: [], targets: [], signs: [], falls: [], trunks: [], walkers: [],
     };
     // Murs invisibles aux deux bouts du niveau.
     this.solid(-3, 60, 3, 80, 'none');
@@ -187,6 +187,12 @@ export class LevelBuilder {
 
   npc(def: NpcDef): this {
     this.def.npcs.push(def);
+    return this;
+  }
+
+  /** Habitant qui se promène à l'arrière-plan entre x0 et x1. */
+  walker(char: string, x0: number, x1: number, z = -1.3, speed = 1, y = 0): this {
+    this.def.walkers.push({ char, x0, x1, z, speed, y });
     return this;
   }
 

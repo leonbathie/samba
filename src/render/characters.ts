@@ -16,7 +16,7 @@ import type { Assets } from '../core/Assets';
 import { QUAD_BOTTOM } from './sprites';
 import { clamp, damp } from '../core/math';
 
-export type AnimKind = 'none' | 'breathe' | 'run' | 'air' | 'climb' | 'sway' | 'shake' | 'bounce' | 'hop' | 'float';
+export type AnimKind = 'none' | 'breathe' | 'run' | 'walk' | 'talk' | 'air' | 'climb' | 'sway' | 'shake' | 'bounce' | 'hop' | 'float';
 
 export interface PoseDef {
   img: string;
@@ -35,6 +35,11 @@ export interface PoseDef {
 export interface CharacterDef {
   /** Identifiant utilisé dans models.json pour brancher un modèle 3D. */
   id: string;
+  /**
+   * Personnage assis : position de l'assise dans l'image (fractions de la largeur depuis la gauche,
+   * hauteur depuis le bas). Le jeu glisse un tabouret dessous pour qu'il ne soit pas assis dans le vide.
+   */
+  seat?: { x0: number; x1: number; top: number };
   ppu?: number;
   poses: Record<string, PoseDef>;
 }
@@ -146,6 +151,25 @@ class SpriteRig {
         rot = Math.sin(this.phase) * 0.04 - 0.035 * sp;
         sy = 1 + 0.025 * Math.sin(this.phase * 2);
         sx = 1 - 0.02 * Math.sin(this.phase * 2);
+        break;
+      }
+      case 'walk': {
+        // Marche tranquille des habitants : petit rebond régulier et léger balancement.
+        const sp = clamp(Math.abs(m.vx) / 1.2, 0.4, 1.6);
+        this.phase += dt * sp * 8.5;
+        oy = Math.abs(Math.sin(this.phase)) * 0.045;
+        rot = Math.sin(this.phase) * 0.03;
+        sy = 1 + 0.015 * Math.sin(this.phase * 2);
+        sx = 1 - 0.01 * Math.sin(this.phase * 2);
+        break;
+      }
+      case 'talk': {
+        // Conversation : hochements, petits gestes et respiration, avec des pauses.
+        const k = 0.5 + 0.5 * Math.sin(t * 0.7);
+        rot = (Math.sin(t * 2.3) * 0.035 + Math.sin(t * 5.3) * 0.012) * k;
+        oy = Math.max(0, Math.sin(t * 4.1)) * 0.025 * k;
+        sy = 1 + 0.014 * Math.sin(t * 2.4);
+        sx = 1 - 0.007 * Math.sin(t * 2.4);
         break;
       }
       case 'air':

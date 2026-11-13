@@ -160,6 +160,21 @@ export interface NpcDef {
   prompt?: string;
   /** Courte échelle : vitesse verticale donnée au héros par ce personnage (utilisée aussi par les tests). */
   boost?: number;
+  /** Se promène entre ces deux abscisses (s'arrête et se tourne vers le héros quand il approche). */
+  wander?: [number, number];
+  /** Bavarde avec ses voisins : hochements et petits gestes. */
+  chat?: boolean;
+}
+
+/** Habitant qui se promène à l'arrière-plan, sans interaction (vie du village). */
+export interface WalkerDef {
+  char: string;
+  x0: number;
+  x1: number;
+  y?: number;
+  /** Profondeur : légèrement derrière le plan de jeu (négatif). */
+  z?: number;
+  speed?: number;
 }
 
 export interface DoorDef {
@@ -260,6 +275,8 @@ export interface LevelDef {
   signs: SignDef[];
   /** Cascades animées : x, y = centre haut. */
   falls: { x: number; y: number; w: number; h: number; z?: number; opacity?: number }[];
+  /** Habitants qui se promènent à l'arrière-plan. */
+  walkers: WalkerDef[];
   /** Grands troncs d'arbre dessinés derrière le plan de jeu (niveau des arbres). */
   trunks: { x: number; w: number; y0: number; y1: number }[];
   /** Position de la sortie du niveau. */
