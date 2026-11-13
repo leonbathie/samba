@@ -28,7 +28,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 OUT = os.path.join(ROOT, "public", "assets")
 ZIP = os.path.join(ROOT, "Taro_Pack_Complet_Jeu_Aventure_Africaine.zip")
-UPSCALER = os.path.join("janai", "2x_AnimeJaNai_HD_V3_Compact.onnx")
 
 sys.path.insert(0, HERE)
 
@@ -193,9 +192,15 @@ def refine_mask(mask, seeds, job):
     return np.clip((alpha - 0.5) * 2.0, 0, 1)
 
 
+def up2x(rgb):
+    """2x enlargement for small background elements: Lanczos + light unsharp mask (no ML model)."""
+    big = cv2.resize(rgb, (rgb.shape[1] * 2, rgb.shape[0] * 2), interpolation=cv2.INTER_LANCZOS4)
+    soft = cv2.GaussianBlur(big, (0, 0), 1.2)
+    return cv2.addWeighted(big, 1.35, soft, -0.35, 0)
+
+
 def build_cutouts(pack, models, names):
     from segmentation import Sam
-    from upscaling import up2x
 
     spec = json.load(open(os.path.join(HERE, "jobs", "cutouts.json"), encoding="utf-8"))
     sam = Sam(models)
@@ -232,7 +237,7 @@ def build_cutouts(pack, models, names):
             alpha = alpha * sheet_alpha
         up = int(job.get("upscale", 1))
         if up == 2:
-            rgb = up2x(np.ascontiguousarray(rgb), os.path.join(models, UPSCALER))
+            rgb = up2x(np.ascontiguousarray(rgb))
             alpha = cv2.resize(alpha, (rgb.shape[1], rgb.shape[0]), interpolation=cv2.INTER_CUBIC)
             alpha = np.clip((alpha - 0.5) * 1.7 + 0.5, 0, 1)
         if alpha.max() < 0.5:
@@ -309,8 +314,6 @@ def build_backdrops(pack, models, names):
 # ----------------------------------------------------------------------------- extras
 
 def build_extras(pack, models, names):
-    from upscaling import up2x
-
     spec = json.load(open(os.path.join(HERE, "jobs", "backdrops.json"), encoding="utf-8"))
     for tex in spec.get("textures", []):
         if names and tex["out"] not in names:
@@ -319,7 +322,7 @@ def build_extras(pack, models, names):
         x0, y0, x1, y1 = [int(round(v)) for v in scaled(tex["crop"], float(tex.get("scale", 1.0)))]
         crop = np.ascontiguousarray(img[y0:y1, x0:x1])
         if int(tex.get("upscale", 1)) == 2:
-            crop = up2x(crop, os.path.join(models, UPSCALER))
+            crop = up2x(crop)
         save_opaque(tex["out"], crop, 88)
     for ch in spec.get("chroma", []):
         if names and ch["out"] not in names:
