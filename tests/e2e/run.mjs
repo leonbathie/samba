@@ -101,6 +101,26 @@ function makeTestGlb() {
   return Buffer.concat([header, chunk(jsonBuf, 0x4e4f534a), chunk(binBuf, 0x004e4942)]);
 }
 
+/**
+ * Version « lien » (dist-lien) : Three.js vient du CDN jsDelivr et la police de Google Fonts.
+ * Avec E2E_THREE_DIR=node_modules/three, ces requêtes sont servies localement (réseau fermé des tests).
+ */
+async function prepareContext(ctx) {
+  const dir = process.env.E2E_THREE_DIR;
+  if (!dir) return ctx;
+  const { readFileSync } = await import('node:fs');
+  await ctx.route('https://cdn.jsdelivr.net/npm/three@*/**', (route) => {
+    const path = new URL(route.request().url()).pathname.replace(/^\/npm\/three@[^/]+\//, '');
+    try {
+      route.fulfill({ contentType: 'text/javascript', body: readFileSync(`${dir}/${path}`) });
+    } catch {
+      route.fulfill({ status: 404, body: '' });
+    }
+  });
+  await ctx.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.fulfill({ contentType: 'text/css', body: '' }));
+  return ctx;
+}
+
 const results = [];
 const GL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
 
@@ -181,7 +201,7 @@ async function main() {
   console.log('Les aventures d’Ousmane — tests de bout en bout\n');
 
   // ------------------------------------------------------------------ ordinateur (clavier)
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 }, locale: 'fr-FR' });
+  const ctx = await prepareContext(await browser.newContext({ viewport: { width: 1280, height: 720 }, locale: 'fr-FR' }));
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
@@ -469,7 +489,7 @@ async function main() {
 
 
   // ------------------------------------------------------------------ modèles 3D et ressources manquantes
-  const ctx3d = await browser.newContext({ viewport: { width: 960, height: 540 }, locale: 'fr-FR' });
+  const ctx3d = await prepareContext(await browser.newContext({ viewport: { width: 960, height: 540 }, locale: 'fr-FR' }));
   const p3 = await ctx3d.newPage();
   p3.on('pageerror', (e) => errors.push(e.message));
   const D = tools(p3);
@@ -508,7 +528,7 @@ async function main() {
   await ctx3d.close();
 
   // ------------------------------------------------------------------ téléphone (tactile)
-  const phone = await browser.newContext({ viewport: { width: 844, height: 390 }, locale: 'fr-FR', hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
+  const phone = await prepareContext(await browser.newContext({ viewport: { width: 844, height: 390 }, locale: 'fr-FR', hasTouch: true, isMobile: true, deviceScaleFactor: 1 }));
   const mp = await phone.newPage();
   mp.on('pageerror', (e) => errors.push(e.message));
   const M = tools(mp);

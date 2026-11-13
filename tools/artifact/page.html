@@ -1,0 +1,21 @@
+<title>Les aventures d'Ousmane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap">
+<style>
+  /* Univers unique, sombre (bois et or) : la page ne suit pas le thème clair ou sombre de l'hôte. */
+  :root { color-scheme: dark; --fond: #1a0d05; --texte: #fff3d6; }
+  html, body { height: 100%; background: var(--fond); color: var(--texte); }
+</style>
+<link rel="stylesheet" href="./assets/jeu.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<canvas id="game" aria-label="Les aventures d'Ousmane"></canvas>
+<div id="ui"></div>
+<script type="module" src="./assets/jeu.js"></script>
