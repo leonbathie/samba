@@ -98,10 +98,10 @@ export function niveau7(): LevelDef {
   b.npc({ id: 'musicienne_djembe', char: 'musicienne_djembe', x: 68.7, y: 0.05, z: -0.4 });
   b.npc({ id: 'danseuse', char: 'danseuse', x: 72, y: 0, facing: -1 });
   b.npc({ id: 'danseur', char: 'danseur', x: 74.2, y: 0 });
-  b.npc({ id: 'malick', char: 'enfant_garcon', x: 77, y: 0, talk: async (g) => g.say('malick', 'dlg.retour.enfants') });
-  b.npc({ id: 'fanta', char: 'enfant_fille', x: 79, y: 0, facing: -1, talk: async (g) => g.say('fanta', 'dlg.retour.enfants') });
+  b.npc({ id: 'malick', char: 'enfant_garcon', x: 77, y: 0, talk: async (g) => g.say('malick', 'dlg.retour.enfants'), wander: [75.5, 80], speed: 2.2 });
+  b.npc({ id: 'fanta', char: 'enfant_fille', x: 79, y: 0, facing: -1, talk: async (g) => g.say('fanta', 'dlg.retour.enfants'), wander: [76, 81], speed: 2 });
   b.npc({ id: 'porteuse', char: 'porteuse', x: 82.6, y: 0, facing: -1, z: -0.5, wander: [80, 90] });
-  b.npc({ id: 'grue', char: 'grue', x: 94, y: 0, facing: -1, wander: [92, 97] });
+  b.npc({ id: 'grue', char: 'grue', x: 94, y: 0, facing: -1, wander: [92, 97], speed: 0.6 });
 
   // ---- la conteuse et le vieux sage, sur la place : révélation et fête
   const finale = async (g: Game): Promise<void> => {

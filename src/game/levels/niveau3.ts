@@ -54,7 +54,7 @@ export function niveau3(): LevelDef {
   b.bird(30, 7.6).bird(100, 8.4, 'props/oiseau', 0.9, -6, 2.6, 30).bird(150, 7.8);
 
   // ---- habitants de la rive
-  b.walker('femme_kente', 150, 168, -1.4, 0.8).walker('enfant_garcon', 2, 14, -1.2, 1.3);
+  b.walker('femme_kente', 150, 168, -1.4, 0.8).walker('enfant_garcon', 2, 14, -1.2, 2.2);
 
   // ---- pièces et objets
   b.coins(6, 1.1, 4).arc(16.5, 25.5, 1.3, 1.2, 8).coins(30, 1.1, 4);

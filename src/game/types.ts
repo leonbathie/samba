@@ -162,6 +162,8 @@ export interface NpcDef {
   boost?: number;
   /** Se promène entre ces deux abscisses (s'arrête et se tourne vers le héros quand il approche). */
   wander?: [number, number];
+  /** Vitesse de promenade (au-delà de 1,6 il court : les enfants qui jouent). */
+  speed?: number;
   /** Bavarde avec ses voisins : hochements et petits gestes. */
   chat?: boolean;
 }

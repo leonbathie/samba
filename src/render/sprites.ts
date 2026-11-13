@@ -306,7 +306,6 @@ export class ContactShadow {
   constructor(width: number, opacity = 0.38) {
     this.base = opacity;
     this.mesh = makeSprite(softGlowTexture(), width, width * 0.24, { color: 0x000000, opacity });
-    this.mesh.renderOrder = 1;
   }
 
   /** Place l'ombre ; `strength` (0 à 1) l'atténue quand le personnage s'élève. */

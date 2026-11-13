@@ -420,7 +420,7 @@ export class Npc implements Interactable {
 
   private place(): void {
     if (!this.view) return;
-    const y = this.y + this.stage.groundOffsetAt(this.x, this.y);
+    const y = this.y + this.stage.groundOffsetAt(this.x, this.y) + this.stage.depthLift(this.y, this.z);
     this.view.root.position.set(this.x, y, this.z);
     this.shadow?.set(this.x, y, this.z - 0.01);
     this.stool?.position.set(this.x + this.seatCx * this.facing, y - 0.02, this.z - 0.012);
@@ -432,26 +432,42 @@ export class Npc implements Interactable {
     const p = this.stage.player;
     const near = p.state !== 'gone' && Math.abs(p.x - this.x) < 2.6 && Math.abs(p.y - this.y) < 2.2;
     let vx = 0;
-    let pose = this.forced ?? (this.def.chat ? 'chat' : this.def.pose ?? 'idle');
-    // Promenade : marche, s'arrête, repart ; s'immobilise quand le héros approche.
+    let pose = this.forced ?? this.def.pose ?? 'idle';
+    let look: number | null = null;
+    if (this.busy) {
+      // En pleine discussion avec le héros : il parle avec les mains et le regarde.
+      pose = this.forced ?? 'chat';
+      look = p.x;
+    } else if (!this.forced && this.def.chat) {
+      const c = this.stage.conversation(this);
+      if (c) {
+        pose = c.speaking ? 'chat' : 'listen';
+        look = c.lookX;
+      } else {
+        pose = 'chat';
+      }
+    }
+    // Promenade : marche ou court, s'arrête, repart ; s'immobilise quand le héros approche.
     if (simulate && !this.forced && this.def.wander && !near && !this.busy) {
       const [x0, x1] = this.def.wander;
+      const speed = this.def.speed ?? 1.05;
       if (this.pause > 0) {
         this.pause -= dt;
       } else {
-        vx = this.walkDir * 1.05;
+        vx = this.walkDir * speed;
         this.x += vx * dt;
         if ((this.walkDir > 0 && this.x >= x1) || (this.walkDir < 0 && this.x <= x0)) {
           this.x = clamp(this.x, x0, x1);
           this.walkDir = (-this.walkDir) as 1 | -1;
-          this.pause = 1.5 + Math.random() * 3;
+          this.pause = (speed > 1.6 ? 0.6 : 1.5) + Math.random() * (speed > 1.6 ? 1.6 : 3);
         }
         this.facing = this.walkDir;
-        pose = 'walk';
+        pose = speed > 1.6 ? 'run' : 'walk';
       }
     }
-    // Les habitants regardent le héros quand il passe près d'eux.
-    if (near && vx === 0) this.facing = p.x >= this.x ? 1 : -1;
+    // Les habitants regardent le héros quand il passe près d'eux (sauf en pleine conversation).
+    if (look === null && near && vx === 0) look = p.x;
+    if (look !== null && vx === 0 && Math.abs(look - this.x) > 0.2) this.facing = look >= this.x ? 1 : -1;
     v.setPose(pose);
     v.setFacing(this.facing);
     v.update(dt, { vx, vy: 0, moving: vx !== 0 });
