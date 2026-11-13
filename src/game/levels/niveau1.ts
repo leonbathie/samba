@@ -23,13 +23,17 @@ export function niveau1(): LevelDef {
   b.baobab(63.5, 0, 8.5, -1.4).acacia(72, 0, 5, -10).hut(92.5, 0, 4, -3.5).baobab(110, 0, 10, -8);
   b.hut(127, 0, 4.2, -3.2, true).acacia(134, 0, 6, -7).baobab(146, 0, 9, -5);
   b.dress(0, 66).dress(76, 150);
-  b.decor('props/etal_fruits', 45.6, -0.15, 4.3, { z: -0.5 });
+  b.decor('props/etal_fruits', 45.8, -0.12, 4.4, { z: -0.5 });
   b.pot(43.2, 0, 1.1, -0.45).pot(48.9, 0, 0.8, -0.45).bush(24.1, 0, 0.9, 0.2);
   b.lantern(10.6, 3.6).lantern(22, 3.2, -2).lantern(57.5, 2.7).lantern(61.5, 2.9).lantern(88.6, 3.7).lantern(131, 3.4, -2);
   b.foliage(60, 6.2, 3.2, -1.2).foliage(64, 6.6, 3, -1.6, true).foliage(8, 8.4, 3.4, 2.2, false, 0.9).foliage(112, 8.6, 3.4, 2.2, true, 0.9);
   b.lily(69, -1.1).lily(73.2, -1.1, 0.26);
   b.bird(20, 7.5).bird(90, 8.2, 'props/oiseau', 0.9, -6, 2.8, 26);
   b.decor('props/ballon', 31.9, 0.02, 0.42, { z: -0.1 });
+
+  // ---- vie du village : habitants qui passent à l'arrière-plan
+  b.walker('femme_fruits', 13, 27, -1.4, 0.8).walker('garcon_explorateur', 36, 52, -1.6, 1.2);
+  b.walker('femme_kente', 78, 98, -1.4, 0.9).walker('porteuse', 115, 133, -1.5, 0.85).walker('enfant_fille', 120, 128, -1.2, 1.4);
 
   // ---- pièces et objets
   b.coins(10.5, 1.1, 4).arc(16.6, 22.4, 1.6, 1.6, 6).coins(28, 1.1, 3);
@@ -70,9 +74,9 @@ export function niveau1(): LevelDef {
       await g.say('voisine2', 'dlg.voisines.apres');
     }
   };
-  b.npc({ id: 'voisine1', char: 'femme_bleue', x: 24.1, y: 0.25, facing: 1, talk: voisines, reach: 1.0 });
-  b.npc({ id: 'voisine2', char: 'femme_rose', x: 25.5, y: 0, facing: 1, talk: voisines, reach: 1.0 });
-  b.npc({ id: 'voisine3', char: 'femme_verte', x: 27.1, y: 0, facing: -1, talk: voisines, reach: 1.0 });
+  b.npc({ id: 'voisine1', char: 'femme_bleue', x: 24.1, y: 0, facing: 1, talk: voisines, reach: 1.0, chat: true });
+  b.npc({ id: 'voisine2', char: 'femme_rose', x: 25.5, y: 0, facing: 1, talk: voisines, reach: 1.0, chat: true });
+  b.npc({ id: 'voisine3', char: 'femme_verte', x: 27.1, y: 0, facing: -1, talk: voisines, reach: 1.0, chat: true });
 
   const enfants = async (g: Game): Promise<void> => {
     if (g.questDone('ballon')) {
@@ -92,8 +96,8 @@ export function niveau1(): LevelDef {
       g.startQuest('ballon');
     }
   };
-  b.npc({ id: 'malick', char: 'enfant_garcon', x: 30.7, y: 0, facing: 1, talk: enfants });
-  b.npc({ id: 'fanta', char: 'enfant_fille', x: 33.3, y: 0, facing: -1, talk: enfants });
+  b.npc({ id: 'malick', char: 'enfant_garcon', x: 30.7, y: 0, facing: 1, talk: enfants, wander: [29.4, 33.2] });
+  b.npc({ id: 'fanta', char: 'enfant_fille', x: 33.3, y: 0, facing: -1, talk: enfants, wander: [30.6, 34.2] });
 
   b.npc({
     id: 'marchande', char: 'porteuse', ghost: true, x: 46.9, y: 0, promptY: 3.0, reach: 1.6,
@@ -148,7 +152,7 @@ export function niveau1(): LevelDef {
     },
   });
   b.npc({
-    id: 'grue', char: 'grue', x: 109.4, y: 0, facing: -1, prompt: 'prompt.look',
+    id: 'grue', char: 'grue', x: 109.4, y: 0, facing: -1, prompt: 'prompt.look', wander: [108.6, 112.4],
     talk: async (g) => {
       if (g.has('plumeGrue')) return g.say('narrateur', 'dlg.grue.2');
       await g.say('narrateur', 'dlg.grue.1');
@@ -157,7 +161,7 @@ export function niveau1(): LevelDef {
     },
   });
   b.npc({
-    id: 'exploratrice', char: 'fille_exploratrice', x: 139.6, y: 0, facing: -1,
+    id: 'exploratrice', char: 'fille_exploratrice', x: 139.6, y: 0, facing: -1, wander: [136.5, 141],
     talk: async (g) => {
       await g.say('exploratrice', 'dlg.explo.1');
       await g.say('explorateur', 'dlg.explo.2');

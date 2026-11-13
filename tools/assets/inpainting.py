@@ -54,7 +54,9 @@ def inpaint(lama, img, mask, context=1.8, min_side=384, tile=640, margin=72):
             continue
         comp = lab == i
         side = int(max(w, h) * context)
-        if max(w, h) <= 0.8 * limit and side <= limit:
+        # A large hole is filled in one window covering the whole height of the picture (coherent
+        # structure, slightly softer detail); only holes taller than that are filled tile by tile.
+        if max(w, h) <= 0.86 * limit:
             side = min(max(side, min_side), limit)
             cx, cy = x + w // 2, y + h // 2
             wx0 = int(np.clip(cx - side // 2, 0, W - side))

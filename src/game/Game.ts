@@ -319,7 +319,10 @@ export class Game {
   // ------------------------------------------------------------------ niveaux et intérieurs
 
   private collectAssets(def: LevelDef, out = new Set<string>()): Set<string> {
-    out.add(def.painting ?? def.theme.backdrop);
+    const painting = def.painting ?? def.theme.backdrop;
+    out.add(painting);
+    if (this.assets.has(painting + '_eau')) out.add(painting + '_eau');
+    for (const w of def.walkers) for (const img of characterImages(CHARACTERS[w.char])) out.add(img);
     for (const img of characterImages(HERO)) out.add(img);
     for (const s of [...def.solids, ...def.movers]) {
       const img = solidImage(s.style);

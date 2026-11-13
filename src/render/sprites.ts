@@ -297,3 +297,97 @@ export function barkTexture(): THREE.Texture {
   tex.anisotropy = 4;
   return tex;
 }
+
+/** Ombre douce posée au sol sous un personnage : elle l'ancre visuellement sur sa surface. */
+export class ContactShadow {
+  readonly mesh: THREE.Mesh;
+  private base: number;
+
+  constructor(width: number, opacity = 0.38) {
+    this.base = opacity;
+    this.mesh = makeSprite(softGlowTexture(), width, width * 0.24, { color: 0x000000, opacity });
+    this.mesh.renderOrder = 1;
+  }
+
+  /** Place l'ombre ; `strength` (0 à 1) l'atténue quand le personnage s'élève. */
+  set(x: number, y: number, z: number, strength = 1): void {
+    this.mesh.position.set(x, y + 0.02, z);
+    const k = Math.max(0, Math.min(1, strength));
+    (this.mesh.material as THREE.MeshBasicMaterial).opacity = this.base * k;
+    this.mesh.visible = k > 0.02;
+    this.mesh.scale.y = Math.abs(this.mesh.scale.x) * 0.24 * (0.6 + 0.4 * k);
+  }
+
+  dispose(): void {
+    this.mesh.removeFromParent();
+    (this.mesh.material as THREE.Material).dispose();
+  }
+}
+
+let stoolTex: THREE.Texture | null = null;
+/** Tabouret de bois sculpté (assise incurvée, pied central gravé, socle), dessiné une fois. */
+export function stoolTexture(): THREE.Texture {
+  if (stoolTex) return stoolTex;
+  const W = 128;
+  const H = 160;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const g = c.getContext('2d')!;
+  const wood = (x0: number, x1: number): CanvasGradient => {
+    const grad = g.createLinearGradient(x0, 0, x1, 0);
+    grad.addColorStop(0, '#5a2f12');
+    grad.addColorStop(0.35, '#a8642c');
+    grad.addColorStop(0.6, '#c27a3a');
+    grad.addColorStop(1, '#6b3a17');
+    return grad;
+  };
+  g.lineJoin = 'round';
+  g.strokeStyle = '#3a1a07';
+  g.lineWidth = 3;
+  // Socle.
+  g.fillStyle = wood(14, 114);
+  g.beginPath();
+  g.roundRect(14, H - 26, 100, 22, 6);
+  g.fill();
+  g.stroke();
+  // Pied central, légèrement cintré.
+  g.fillStyle = wood(38, 90);
+  g.beginPath();
+  g.moveTo(40, H - 26);
+  g.quadraticCurveTo(52, 90, 40, 42);
+  g.lineTo(88, 42);
+  g.quadraticCurveTo(76, 90, 88, H - 26);
+  g.closePath();
+  g.fill();
+  g.stroke();
+  // Gravures en zigzag.
+  g.strokeStyle = 'rgba(255,214,150,0.75)';
+  g.lineWidth = 2.5;
+  for (const y of [62, 84, 106]) {
+    g.beginPath();
+    for (let i = 0; i <= 6; i++) g.lineTo(48 + i * 5.4, y + (i % 2 ? 6 : 0));
+    g.stroke();
+  }
+  // Assise incurvée.
+  g.strokeStyle = '#3a1a07';
+  g.lineWidth = 3;
+  g.fillStyle = wood(4, 124);
+  g.beginPath();
+  g.moveTo(4, 14);
+  g.quadraticCurveTo(64, 40, 124, 14);
+  g.lineTo(122, 34);
+  g.quadraticCurveTo(64, 58, 6, 34);
+  g.closePath();
+  g.fill();
+  g.stroke();
+  g.strokeStyle = 'rgba(255,220,160,0.6)';
+  g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(14, 22);
+  g.quadraticCurveTo(64, 44, 114, 22);
+  g.stroke();
+  stoolTex = new THREE.CanvasTexture(c);
+  stoolTex.colorSpace = THREE.SRGBColorSpace;
+  return stoolTex;
+}

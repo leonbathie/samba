@@ -8,6 +8,7 @@ import type { ClimbDef, HangDef } from './types';
 import { type Body, makeBody, moveBody, overlaps } from './physics';
 import { CharacterView } from '../render/characters';
 import { HERO } from './characterDefs';
+import { ContactShadow } from '../render/sprites';
 import { approach, clamp, damp, lerp, smooth } from '../core/math';
 import type { Weapon } from '../core/Save';
 
@@ -48,6 +49,8 @@ export class Player {
   private climbing = false;
   private noAmmoHint = 0;
   private pendingBoost = 0;
+  private visOff = 0;
+  private shadow = new ContactShadow(0.9);
 
   constructor(private game: Game, private stage: Stage) {
     this.view = new CharacterView(game.assets, HERO, game.models);
@@ -473,15 +476,23 @@ export class Player {
     // Clignotement pendant la protection temporaire.
     this.view.setOpacity(this.invuln > 0 && Math.floor(this.invuln * 14) % 2 === 0 ? 0.35 : 1);
     this.view.update(dt, { vx: b.vx, vy: b.vy, moving });
+    // Les pieds se posent sur le vrai dessus de l'image (branche courbe, muret irrégulier).
+    const off = b.onGround && this.state !== 'hang' ? this.stage.surfaceOffset(b.ground, b.x) : 0;
+    this.visOff += (off - this.visOff) * Math.min(1, dt * 18);
     this.sync();
+    if (!this.shadow.mesh.parent) this.stage.root.add(this.shadow.mesh);
+    const gy = b.onGround ? b.y + this.visOff : this.stage.groundBelow(b.x, b.y);
+    const k = this.state === 'gone' || gy === null ? 0 : b.onGround ? 1 : clamp(1 - (b.y - gy) / 4.5, 0, 1);
+    this.shadow.set(b.x, gy ?? b.y, 0.09, k * (this.invuln > 0 ? 0.7 : 1));
   }
 
   sync(): void {
     this.view.root.position.x = this.body.x;
-    this.view.root.position.y = this.body.y;
+    this.view.root.position.y = this.body.y + this.visOff;
   }
 
   dispose(): void {
     this.view.dispose();
+    this.shadow.dispose();
   }
 }

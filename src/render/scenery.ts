@@ -18,19 +18,83 @@ export interface CamBounds {
  * Arrière-plan peint, placé loin derrière le plan de jeu. Il est plus grand que l'écran et glisse
  * lentement pendant que la caméra traverse le niveau : on découvre le tableau au fil de la marche.
  */
+const PAINT_VERT = /* glsl */ `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+
+const PAINT_FRAG = /* glsl */ `
+uniform sampler2D uMap;
+uniform sampler2D uMask;
+uniform float uHasMask;
+uniform float uTime;
+uniform vec3 uTint;
+varying vec2 vUv;
+void main() {
+  vec2 uv = vUv;
+  vec3 extra = vec3(0.0);
+  if (uHasMask > 0.5) {
+    vec4 m = texture2D(uMask, vUv);
+    float w = m.r;
+    float f = m.g;
+    // Eau calme : ondulation horizontale, plus ample au premier plan (bas de l'image).
+    float near = 1.0 - vUv.y;
+    float amp = mix(0.0005, 0.0024, near);
+    uv.x += w * amp * sin(vUv.y * 260.0 + uTime * 1.7);
+    uv.y += w * amp * 0.6 * sin(vUv.x * 120.0 + vUv.y * 60.0 + uTime * 1.2);
+    // Cascades : léger tremblement et bandes claires qui descendent.
+    uv.x += f * 0.0012 * sin(vUv.y * 520.0 + uTime * 9.0);
+    float streak = sin(vUv.x * 900.0 + sin(vUv.x * 77.0) * 3.0);
+    float flow = fract(vUv.y * 9.0 + uTime * 0.9 + streak * 0.12);
+    extra += f * vec3(0.18) * smoothstep(0.72, 1.0, flow) * (0.55 + 0.45 * streak);
+    // Reflets qui scintillent sur l'eau calme.
+    float g = sin(vUv.x * 700.0 + sin(vUv.y * 230.0 + uTime * 1.8) * 2.5) * sin(vUv.y * 380.0 - uTime * 1.4);
+    extra += w * vec3(0.22) * smoothstep(0.86, 1.0, g) * (0.35 + near);
+  }
+  vec4 c = texture2D(uMap, uv);
+  gl_FragColor = vec4((c.rgb + extra) * uTint, 1.0);
+  #include <colorspace_fragment>
+}`;
+
+/**
+ * Matériau des tableaux peints (arrière-plans, intérieurs). Quand un masque d'eau existe
+ * (image « _eau » produite par tools/assets), l'eau et les cascades peintes s'animent.
+ */
+export function paintingMaterial(tex: THREE.Texture, mask: THREE.Texture | null, tint = 0xffffff): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    vertexShader: PAINT_VERT,
+    fragmentShader: PAINT_FRAG,
+    depthWrite: false,
+    uniforms: {
+      uMap: { value: tex },
+      uMask: { value: mask ?? tex },
+      uHasMask: { value: mask ? 1 : 0 },
+      uTime: { value: 0 },
+      uTint: { value: new THREE.Color(tint) },
+    },
+  });
+}
+
+/**
+ * Arrière-plan peint, placé loin derrière le plan de jeu. Il est plus grand que l'écran et glisse
+ * lentement pendant que la caméra traverse le niveau : on découvre le tableau au fil de la marche.
+ */
 export class Backdrop {
   static readonly Z = -60;
   readonly mesh: THREE.Mesh;
+  readonly material: THREE.ShaderMaterial;
   private aspect: number;
   /** Partie du tableau montrée quand la caméra est en bas (0 = bas de l'image, 1 = haut). */
   alignLow = 0.5;
   /** Partie montrée quand la caméra est tout en haut du niveau. */
   alignHigh = 0.65;
 
-  constructor(tex: THREE.Texture, aspect: number, tint = 0xffffff) {
+  constructor(tex: THREE.Texture, aspect: number, tint = 0xffffff, mask: THREE.Texture | null = null) {
     this.aspect = aspect;
-    const mat = new THREE.MeshBasicMaterial({ map: tex, color: tint, depthWrite: false, toneMapped: false });
-    this.mesh = new THREE.Mesh(QUAD, mat);
+    this.material = paintingMaterial(tex, mask, tint);
+    this.mesh = new THREE.Mesh(QUAD, this.material);
     this.mesh.position.z = Backdrop.Z;
     this.mesh.renderOrder = -100;
     this.mesh.frustumCulled = false;

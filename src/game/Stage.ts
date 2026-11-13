@@ -4,13 +4,15 @@
  */
 import * as THREE from 'three';
 import type { Game } from './Game';
-import type { ClimbDef, DecorDef, HangDef, ItemDef, LevelDef, MoverDef, SolidDef, WaterDef } from './types';
+import type { ClimbDef, DecorDef, HangDef, ItemDef, LevelDef, MoverDef, SolidDef, WalkerDef, WaterDef } from './types';
 import type { Solid } from './physics';
 import { Player } from './Player';
 import { Checkpoint, Chest, Companion, Door, type Interactable, Npc, Pickup, Projectile, type ProjectileSpec, Target } from './entities';
 import { createEnemy, type Enemy } from './enemies';
-import { Backdrop, SkyVeil, makeEarth, makeTrunk, makeWater, makeWaterfall } from '../render/scenery';
-import { glowSprite, imageSprite, makeSprite, Particles, QUAD } from '../render/sprites';
+import { Backdrop, SkyVeil, makeEarth, makeTrunk, makeWater, makeWaterfall, paintingMaterial } from '../render/scenery';
+import { ContactShadow, glowSprite, imageSprite, makeSprite, Particles, QUAD } from '../render/sprites';
+import { CharacterView } from '../render/characters';
+import { CHARACTERS } from './characterDefs';
 import { clamp, damp, rng } from '../core/math';
 import { HANG_REACH } from './tuning';
 import { t } from '../i18n';
@@ -98,6 +100,90 @@ function arrowTexture(): THREE.Texture {
   return arrowTex;
 }
 
+/** Image d'une plateforme posée dans la scène : sert à poser les pieds sur son vrai dessus. */
+interface Placement {
+  left: number;
+  sw: number;
+  sh: number;
+  top: number;
+  flip: boolean;
+  profile: (number | null)[];
+  baseX: number;
+}
+
+function sampleProfile(profile: (number | null)[], u: number): number | null {
+  const n = profile.length;
+  const f = clamp(u, 0, 1) * n - 0.5;
+  const i0 = clamp(Math.floor(f), 0, n - 1);
+  const i1 = clamp(i0 + 1, 0, n - 1);
+  const a = profile[i0];
+  const b = profile[i1];
+  if (a === null && b === null) return null;
+  if (a === null) return b;
+  if (b === null) return a;
+  const k = clamp(f - i0, 0, 1);
+  return a + (b - a) * k;
+}
+
+/** Habitant qui se promène à l'arrière-plan : il marche, s'arrête, repart dans l'autre sens. */
+class Walker {
+  readonly view: CharacterView;
+  private shadow: ContactShadow;
+  private x: number;
+  private dir: 1 | -1;
+  private pause: number;
+  private speed: number;
+
+  constructor(private stage: Stage, readonly def: WalkerDef, seed: number) {
+    const g = stage.game;
+    this.view = new CharacterView(g.assets, CHARACTERS[def.char], g.models);
+    this.view.setPose('walk');
+    // Un léger voile atmosphérique les place un peu en retrait.
+    const c = new THREE.Color(stage.lightColor).multiplyScalar(0.9);
+    this.view.setTint(c.r, c.g, c.b);
+    this.x = def.x0 + (def.x1 - def.x0) * ((seed * 0.61803) % 1);
+    this.dir = seed % 2 ? 1 : -1;
+    this.pause = (seed % 3) * 0.8;
+    this.speed = (def.speed ?? 1) * (0.85 + ((seed * 0.37) % 0.3));
+    this.view.root.position.z = def.z ?? -1.3;
+    this.shadow = new ContactShadow(this.view.height * 0.32, 0.3);
+    stage.root.add(this.shadow.mesh, this.view.root);
+  }
+
+  update(dt: number, simulate: boolean): void {
+    const d = this.def;
+    let vx = 0;
+    if (simulate) {
+      if (this.pause > 0) {
+        this.pause -= dt;
+        this.view.setPose(this.pause > 0 ? 'chat' : 'walk');
+      } else {
+        vx = this.dir * this.speed;
+        this.x += vx * dt;
+        if ((this.dir > 0 && this.x >= d.x1) || (this.dir < 0 && this.x <= d.x0)) {
+          this.x = clamp(this.x, d.x0, d.x1);
+          this.dir = (-this.dir) as 1 | -1;
+          this.pause = 1.2 + Math.random() * 2.8;
+        } else if (Math.random() < dt * 0.08) {
+          this.pause = 1 + Math.random() * 2;
+        }
+        this.view.setPose('walk');
+      }
+    }
+    const y = (d.y ?? 0) + this.stage.groundOffsetAt(this.x, d.y ?? 0);
+    this.view.setFacing(this.dir);
+    this.view.update(dt, { vx, vy: 0, moving: vx !== 0 });
+    this.view.root.position.x = this.x;
+    this.view.root.position.y = y;
+    this.shadow.set(this.x, y, (d.z ?? -1.3) - 0.01);
+  }
+
+  dispose(): void {
+    this.view.dispose();
+    this.shadow.dispose();
+  }
+}
+
 export class Stage {
   readonly root = new THREE.Group();
   readonly solids: Solid[] = [];
@@ -121,6 +207,8 @@ export class Stage {
 
   private backdrop: Backdrop | null = null;
   private veil: SkyVeil | null = null;
+  private placements = new Map<Solid, Placement[]>();
+  private walkers: Walker[] = [];
   private movers: MoverRt[] = [];
   private animated: THREE.ShaderMaterial[] = [];
   private swayers: { mesh: THREE.Object3D; amp: number; seed: number }[] = [];
@@ -157,13 +245,18 @@ export class Stage {
       // Intérieur : le tableau peint occupe exactement les limites de la pièce.
       const w = b.maxX - b.minX;
       const h = b.maxY - b.minY;
-      const mesh = makeSprite(a.tex(def.painting), w, h, { order: -50 });
-      (mesh.material as THREE.MeshBasicMaterial).transparent = false;
-      mesh.scale.multiplyScalar(1.012);
+      const maskId = def.painting + '_eau';
+      const mat = paintingMaterial(a.tex(def.painting), a.has(maskId) ? a.tex(maskId) : null);
+      this.animated.push(mat);
+      const mesh = new THREE.Mesh(QUAD, mat);
+      mesh.scale.set(w * 1.012, h * 1.012, 1);
+      mesh.renderOrder = -50;
       mesh.position.set((b.minX + b.maxX) / 2, (b.minY + b.maxY) / 2, -0.06);
       this.root.add(mesh);
     } else {
-      this.backdrop = new Backdrop(a.tex(def.theme.backdrop), a.aspect(def.theme.backdrop), def.theme.tint ?? 0xffffff);
+      const maskId = def.theme.backdrop + '_eau';
+      this.backdrop = new Backdrop(a.tex(def.theme.backdrop), a.aspect(def.theme.backdrop), def.theme.tint ?? 0xffffff, a.has(maskId) ? a.tex(maskId) : null);
+      this.animated.push(this.backdrop.material);
       if (def.theme.alignLow !== undefined) this.backdrop.alignLow = def.theme.alignLow;
       if (def.theme.alignHigh !== undefined) this.backdrop.alignHigh = def.theme.alignHigh;
       this.root.add(this.backdrop.mesh);
@@ -200,6 +293,7 @@ export class Stage {
       this.npcs.push(npc);
       this.interactables.push(npc);
     }
+    def.walkers.forEach((w, i) => this.walkers.push(new Walker(this, w, i + 1)));
     for (const c of def.chests) {
       const chest = new Chest(this, c);
       this.chests.push(chest);
@@ -244,7 +338,7 @@ export class Stage {
     return { x0: s.x, x1: s.x + s.w, y0: s.y - s.h, y1: s.y, oneWay: !!s.oneWay, off: !!s.hidden };
   }
 
-  private solidVisuals(s: SolidDef, parent: THREE.Object3D): THREE.Object3D[] {
+  private solidVisuals(s: SolidDef, parent: THREE.Object3D, solid?: Solid): THREE.Object3D[] {
     const a = this.game.assets;
     const out: THREE.Object3D[] = [];
     const look = LOOK[s.style];
@@ -263,6 +357,12 @@ export class Stage {
         const left = s.x + i * tw - (flip ? 1 - look.x1 : look.x0) * sw;
         const mesh = makeSprite(a.tex(look.img), sw, sh, { flip, color: this.lightColor, order: 1 });
         mesh.position.set(left + sw / 2, s.y + look.top * sh - sh / 2, -0.02 + i * 0.0005);
+        const profile = a.info(look.img).surface;
+        if (solid && profile) {
+          const list = this.placements.get(solid) ?? [];
+          list.push({ left, sw, sh, top: look.top, flip, profile, baseX: s.x });
+          this.placements.set(solid, list);
+        }
         parent.add(mesh);
         out.push(mesh);
       }
@@ -284,7 +384,7 @@ export class Stage {
   private addSolid(s: SolidDef): void {
     const solid = this.solidFromDef(s);
     this.solids.push(solid);
-    const objects = this.solidVisuals(s, this.root);
+    const objects = this.solidVisuals(s, this.root, solid);
     if (s.hidden) for (const o of objects) o.visible = false;
     if (s.id) this.byId.set(s.id, { solid, objects });
   }
@@ -295,7 +395,7 @@ export class Stage {
     this.solids.push(solid);
     const group = new THREE.Group();
     this.root.add(group);
-    this.solidVisuals(m, group);
+    this.solidVisuals(m, group, solid);
     this.movers.push({ def: m, solid, group });
     if (m.id) this.byId.set(m.id, { solid, objects: [group] });
   }
@@ -379,6 +479,51 @@ export class Stage {
   }
 
   // ------------------------------------------------------------------ requêtes
+
+  /**
+   * Décalage vertical (unités) qui pose les pieds sur le vrai dessus de l'image d'une plateforme :
+   * une branche courbe ou un muret irrégulier ne suit pas exactement la ligne droite des collisions.
+   */
+  surfaceOffset(s: Solid | null, x: number): number {
+    if (!s) return 0;
+    const list = this.placements.get(s);
+    if (!list) return 0;
+    const shift = s.x0 - list[0].baseX;
+    const lx = x - shift;
+    for (const p of list) {
+      if (lx < p.left || lx > p.left + p.sw) continue;
+      let u = (lx - p.left) / p.sw;
+      if (p.flip) u = 1 - u;
+      const prof = sampleProfile(p.profile, u);
+      return prof === null ? 0 : clamp((p.top - prof) * p.sh, -0.3, 0.1);
+    }
+    return 0;
+  }
+
+  /** Surface sur laquelle repose un point (x, y) : sert aux personnages immobiles et aux animaux sans gravité. */
+  solidAt(x: number, y: number): Solid | null {
+    for (const s of this.solids) {
+      if (!s.off && x >= s.x0 && x <= s.x1 && Math.abs(s.y1 - y) < 0.08) return s;
+    }
+    return null;
+  }
+
+  groundOffsetAt(x: number, y: number): number {
+    return this.surfaceOffset(this.solidAt(x, y), x);
+  }
+
+  /** Hauteur visible du sol sous un point (pour l'ombre d'un personnage en l'air), ou null. */
+  groundBelow(x: number, y: number): number | null {
+    let best: Solid | null = null;
+    for (const s of this.solids) {
+      if (s.off || x < s.x0 || x > s.x1 || s.y1 > y + 0.02) continue;
+      if (!best || s.y1 > best.y1) best = s;
+    }
+    if (!best) return null;
+    const w = this.waterAt(x);
+    if (w && w.y > best.y1) return null;
+    return best.y1 + this.surfaceOffset(best, x);
+  }
 
   climbAt(x: number, y: number, h: number): ClimbDef | null {
     for (const c of this.def.climbs) {
@@ -560,7 +705,8 @@ export class Stage {
     this.sweep(this.pickups);
     for (const c of this.chests) c.update(dt);
     for (const c of this.checkpoints) if (simulate) c.update(dt);
-    for (const n of this.npcs) n.update(dt);
+    for (const n of this.npcs) n.update(dt, simulate);
+    for (const w of this.walkers) w.update(dt, simulate);
     for (const tg of this.targets) tg.update(dt);
 
     if (simulate) {
@@ -769,6 +915,7 @@ export class Stage {
     this.companion?.dispose();
     for (const e of this.enemies) e.dispose();
     for (const n of this.npcs) n.dispose();
+    for (const w of this.walkers) w.dispose();
     this.root.traverse((o) => {
       const m = o as THREE.Mesh;
       if (!m.isMesh) return;

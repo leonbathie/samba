@@ -12,6 +12,8 @@ export interface ImageInfo {
   h: number;
   /** Position horizontale des pieds (0 à 1), calculée par l'outil de découpe pour les personnages. */
   fx?: number;
+  /** Plateformes : hauteur du vrai dessus de l'image le long de sa largeur (0 = haut, 1 = bas). */
+  surface?: (number | null)[];
 }
 
 export class Assets {
@@ -107,7 +109,8 @@ export class Assets {
       this.loader.load(
         this.base + info.file,
         (tex) => {
-          tex.colorSpace = THREE.SRGBColorSpace;
+          // Les masques d'eau sont des données, pas des couleurs : pas de conversion sRGB.
+          tex.colorSpace = id.endsWith('_eau') ? THREE.NoColorSpace : THREE.SRGBColorSpace;
           tex.anisotropy = Math.min(4, this.maxAnisotropy);
           tex.generateMipmaps = true;
           tex.minFilter = THREE.LinearMipmapLinearFilter;

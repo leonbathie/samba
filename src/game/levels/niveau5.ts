@@ -101,7 +101,7 @@ export function niveau5(): LevelDef {
     g.completeLevel();
   };
   b.npc({ id: 'penda2', char: 'femme_kente', x: 180, y: 0.4, facing: -1, talk: arrivee });
-  b.decor('props/pirogue', 185.4, W - 0.25, 0.75, { z: 0.36 });
+  b.decor('props/pirogue', 185.4, W - 0.25, 0.75, { z: 0.36, sway: 0.025 });
 
   b.def.objective = (g) => (g.progress.quests.jarres ? 'obj.5b' : 'obj.5a');
   return b.build();

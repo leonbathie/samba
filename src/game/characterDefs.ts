@@ -49,9 +49,20 @@ export const AMIE: CharacterDef = {
   },
 };
 
-const one = (id: string, img: string, h: number, anim: CharacterDef['poses'][string]['anim'] = 'breathe', ax = 0.5): CharacterDef => ({
+type Seat = NonNullable<CharacterDef['seat']>;
+
+const one = (
+  id: string, img: string, h: number, anim: CharacterDef['poses'][string]['anim'] = 'breathe', ax = 0.5, seat?: Seat,
+): CharacterDef => ({
   id,
-  poses: { idle: { img, h, anim, ax }, dance: { img, h, anim: 'bounce', ax } },
+  seat,
+  poses: {
+    idle: { img, h, anim, ax },
+    // Un personnage assis ne saute pas de son tabouret : il se balance en rythme.
+    dance: { img, h, anim: seat ? 'talk' : 'bounce', ax },
+    walk: { img, h, anim: 'walk', ax },
+    chat: { img, h, anim: 'talk', ax },
+  },
 });
 
 /** Habitants et animaux amis. La clé est celle utilisée par les niveaux (NpcDef.char). */
@@ -59,7 +70,7 @@ export const CHARACTERS: Record<string, CharacterDef> = {
   hero: HERO,
   amie: AMIE,
   conteuse: one('conteuse', 'npc/conteuse', 1.55, 'breathe', 0.55),
-  mamie: one('conteuse_fete', 'npc/mamie', 1.45, 'breathe', 0.5),
+  mamie: one('conteuse_fete', 'npc/mamie', 1.45, 'talk', 0.5, { x0: 0.42, x1: 0.8, top: 0.28 }),
   sorcier: one('sorcier', 'npc/doyen', 2.1, 'breathe', 0.5),
   femme_fruits: one('femme_fruits', 'npc/femme_fruits', 2.05),
   femme_kente: one('femme_kente', 'npc/femme_kente', 2.05),
@@ -68,15 +79,15 @@ export const CHARACTERS: Record<string, CharacterDef> = {
   femme_verte: one('femme_verte', 'npc/femme_verte', 2.0),
   porteuse: one('porteuse', 'npc/porteuse', 2.35),
   cuisiniere: one('cuisiniere', 'npc/cuisiniere', 1.55, 'breathe', 0.62),
-  artisan: one('artisan', 'npc/artisan', 1.75, 'breathe', 0.45),
+  artisan: one('artisan', 'npc/artisan', 1.75, 'breathe', 0.45, { x0: 0.05, x1: 0.4, top: 0.24 }),
   enfants_assis: one('enfants_assis', 'npc/enfants_assis', 1.15),
   enfant_garcon: one('enfant_garcon', 'npc/enfant_garcon', 1.25, 'hop'),
   enfant_fille: one('enfant_fille', 'npc/enfant_fille', 1.25, 'hop'),
   fille_exploratrice: one('fille_exploratrice', 'npc/fille_exploratrice', 1.72),
   garcon_explorateur: one('garcon_explorateur', 'npc/garcon_explorateur', 1.62),
-  musicien_djembe: one('musicien_djembe', 'npc/musicien_djembe', 1.6, 'bounce'),
-  musicien_kora: one('musicien_kora', 'npc/musicien_kora', 1.62, 'breathe'),
-  musicienne_djembe: one('musicienne_djembe', 'npc/musicienne_djembe', 1.5, 'bounce'),
+  musicien_djembe: one('musicien_djembe', 'npc/musicien_djembe', 1.6, 'talk', 0.5, { x0: 0.04, x1: 0.36, top: 0.31 }),
+  musicien_kora: one('musicien_kora', 'npc/musicien_kora', 1.62, 'breathe', 0.5, { x0: 0.04, x1: 0.34, top: 0.3 }),
+  musicienne_djembe: one('musicienne_djembe', 'npc/musicienne_djembe', 1.5, 'talk', 0.5, { x0: 0.08, x1: 0.38, top: 0.36 }),
   danseuse: one('danseuse', 'npc/danseuse', 1.5, 'bounce'),
   danseur: one('danseur', 'npc/danseur', 1.4, 'bounce'),
   singe_ami: one('singe_ami', 'npc/singe_ami', 0.95, 'hop'),
