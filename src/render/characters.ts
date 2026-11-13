@@ -13,8 +13,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { Assets } from '../core/Assets';
-import { QUAD_BOTTOM } from './sprites';
 import { clamp, damp } from '../core/math';
+import {
+  type BodyProfile, DEFAULT_BODY, type MotionAction, MotionDriver, type MotionParams, WARP_QUAD, resolveMotion, warpMaterial,
+} from './motion';
 
 export type AnimKind = 'none' | 'breathe' | 'run' | 'walk' | 'talk' | 'air' | 'climb' | 'sway' | 'shake' | 'bounce' | 'hop' | 'float';
 
@@ -28,6 +30,13 @@ export interface PoseDef {
   /** Décalage vertical en unités (négatif = l'image descend sous les pieds). */
   dy?: number;
   anim?: AnimKind;
+  /**
+   * Mouvement par déformation de l'image (pieds plantés au sol). Quand il est donné, il remplace
+   * l'animation `anim` d'un bloc.
+   */
+  motion?: MotionAction;
+  /** Zones du corps propres à cette image (sinon celles du personnage). */
+  body?: BodyProfile;
   /** Pivot des rotations en haut de l'image (personnage suspendu). */
   pivotTop?: boolean;
 }
@@ -40,6 +49,10 @@ export interface CharacterDef {
    * hauteur depuis le bas). Le jeu glisse un tabouret dessous pour qu'il ne soit pas assis dans le vide.
    */
   seat?: { x0: number; x1: number; top: number };
+  /** Zones du corps dans l'image : genoux, séparation des jambes, mains qui gesticulent. */
+  body?: BodyProfile;
+  /** Ajustements des mouvements propres à ce personnage (réglés dans le studio des mouvements). */
+  motion?: Partial<Record<MotionAction, Partial<MotionParams>>>;
   ppu?: number;
   poses: Record<string, PoseDef>;
 }
@@ -58,6 +71,7 @@ class SpriteRig {
   private pivot = new THREE.Group();
   private mesh: THREE.Mesh;
   private mat: THREE.MeshBasicMaterial;
+  readonly driver: MotionDriver;
   private current: PoseDef | null = null;
   private poseName = '';
   private w = 1;
@@ -69,10 +83,10 @@ class SpriteRig {
   private tint = new THREE.Color(1, 1, 1);
 
   constructor(private assets: Assets, private def: CharacterDef) {
-    this.mat = new THREE.MeshBasicMaterial({
-      transparent: true, depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
-    });
-    this.mesh = new THREE.Mesh(QUAD_BOTTOM, this.mat);
+    const warp = warpMaterial();
+    this.mat = warp.material;
+    this.driver = new MotionDriver(warp.uniforms);
+    this.mesh = new THREE.Mesh(WARP_QUAD, this.mat);
     this.pivot.add(this.mesh);
     this.group.add(this.pivot);
   }
@@ -99,6 +113,17 @@ class SpriteRig {
     this.mesh.scale.set(this.w, this.h, 1);
     this.pivot.rotation.z = 0;
     this.pivot.scale.set(1, 1, 1);
+    if (p.motion) {
+      this.driver.setBody(p.body ?? this.def.body ?? DEFAULT_BODY, this.h / this.w);
+      this.driver.setParams(resolveMotion(p.motion, this.def.motion));
+    } else {
+      this.driver.stop();
+    }
+  }
+
+  /** Change seulement le mouvement (même image) : utilisé par le studio et les comportements. */
+  setMotionParams(params: MotionParams): void {
+    this.driver.setParams(params);
   }
 
   get height(): number {
@@ -132,7 +157,8 @@ class SpriteRig {
       this.mat.needsUpdate = true;
     }
     this.t += dt;
-    const anim = this.current?.anim ?? 'none';
+    this.driver.update(dt, m.vx);
+    const anim = this.current?.motion ? 'none' : this.current?.anim ?? 'none';
     let rot = 0;
     let sx = 1;
     let sy = 1;
@@ -386,6 +412,11 @@ export class CharacterView {
     this.poseName = name;
     this.sprite.setPose(name);
     this.model?.setPose(name);
+  }
+
+  /** Pilote du mouvement de l'image provisoire (studio des mouvements). */
+  get motion(): MotionDriver {
+    return this.sprite.driver;
   }
 
   setFacing(dir: number): void {

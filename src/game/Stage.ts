@@ -155,8 +155,9 @@ class Walker {
     let vx = 0;
     if (simulate) {
       if (this.pause > 0) {
+        // Arrêt : il regarde autour de lui, puis repart.
         this.pause -= dt;
-        this.view.setPose(this.pause > 0 ? 'chat' : 'walk');
+        this.view.setPose(this.pause > 0 ? 'idle' : this.speed > 1.6 ? 'run' : 'walk');
       } else {
         vx = this.dir * this.speed;
         this.x += vx * dt;
@@ -167,15 +168,18 @@ class Walker {
         } else if (Math.random() < dt * 0.08) {
           this.pause = 1 + Math.random() * 2;
         }
-        this.view.setPose('walk');
+        this.view.setPose(this.speed > 1.6 ? 'run' : 'walk');
       }
     }
-    const y = (d.y ?? 0) + this.stage.groundOffsetAt(this.x, d.y ?? 0);
+    const z = d.z ?? -1.3;
+    const g = d.y ?? 0;
+    // Placé en retrait, il est abaissé juste ce qu'il faut pour apparaître posé sur la ligne du sol.
+    const y = g + this.stage.groundOffsetAt(this.x, g) + this.stage.depthLift(g, z);
     this.view.setFacing(this.dir);
     this.view.update(dt, { vx, vy: 0, moving: vx !== 0 });
     this.view.root.position.x = this.x;
     this.view.root.position.y = y;
-    this.shadow.set(this.x, y, (d.z ?? -1.3) - 0.01);
+    this.shadow.set(this.x, y, z - 0.01);
   }
 
   dispose(): void {
@@ -209,6 +213,7 @@ export class Stage {
   private veil: SkyVeil | null = null;
   private placements = new Map<Solid, Placement[]>();
   private walkers: Walker[] = [];
+  private groups: Npc[][] | null = null;
   private movers: MoverRt[] = [];
   private animated: THREE.ShaderMaterial[] = [];
   private swayers: { mesh: THREE.Object3D; amp: number; seed: number }[] = [];
@@ -510,6 +515,53 @@ export class Stage {
 
   groundOffsetAt(x: number, y: number): number {
     return this.surfaceOffset(this.solidAt(x, y), x);
+  }
+
+  /**
+   * Correction de perspective pour un personnage placé en retrait (z < 0) : la caméra regarde de
+   * côté, un peu au-dessus du sol ; sans correction, il semblerait flotter au-dessus de la ligne du sol.
+   */
+  depthLift(groundY: number, z: number): number {
+    if (z >= 0) return 0;
+    const v = this.game.view;
+    return ((groundY - v.camY) * -z) / v.dist;
+  }
+
+  /**
+   * Conversation entre habitants voisins : ils parlent chacun leur tour pendant que les autres
+   * écoutent et regardent celui qui parle. Renvoie le rôle de `npc` et l'abscisse à regarder.
+   */
+  conversation(npc: Npc): { speaking: boolean; lookX: number } | null {
+    if (!this.groups) {
+      this.groups = [];
+      const chatters = this.npcs.filter((n) => n.def.chat && n.view);
+      const seen = new Set<Npc>();
+      for (const n of chatters) {
+        if (seen.has(n)) continue;
+        const group = [n];
+        seen.add(n);
+        for (let i = 0; i < group.length; i++) {
+          for (const m of chatters) {
+            if (!seen.has(m) && Math.abs(m.x - group[i].x) < 3.2) {
+              seen.add(m);
+              group.push(m);
+            }
+          }
+        }
+        group.sort((a, b) => a.x - b.x);
+        this.groups.push(group);
+      }
+    }
+    const group = this.groups.find((gr) => gr.includes(npc));
+    if (!group || group.length < 2) return null;
+    const turn = Math.floor((this.time + group[0].x * 0.37) / 3.6) % group.length;
+    const speaker = group[turn];
+    if (speaker === npc) {
+      const others = group.filter((m) => m !== npc);
+      const cx = others.reduce((a, m) => a + m.x, 0) / others.length;
+      return { speaking: true, lookX: cx };
+    }
+    return { speaking: false, lookX: speaker.x };
   }
 
   /** Hauteur visible du sol sous un point (pour l'ombre d'un personnage en l'air), ou null. */

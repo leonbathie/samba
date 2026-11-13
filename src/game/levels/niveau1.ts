@@ -33,7 +33,7 @@ export function niveau1(): LevelDef {
 
   // ---- vie du village : habitants qui passent à l'arrière-plan
   b.walker('femme_fruits', 13, 27, -1.4, 0.8).walker('garcon_explorateur', 36, 52, -1.6, 1.2);
-  b.walker('femme_kente', 78, 98, -1.4, 0.9).walker('porteuse', 115, 133, -1.5, 0.85).walker('enfant_fille', 120, 128, -1.2, 1.4);
+  b.walker('femme_kente', 78, 98, -1.4, 0.9).walker('porteuse', 115, 133, -1.5, 0.85).walker('enfant_fille', 118, 130, -1.2, 2.2);
 
   // ---- pièces et objets
   b.coins(10.5, 1.1, 4).arc(16.6, 22.4, 1.6, 1.6, 6).coins(28, 1.1, 3);
@@ -96,8 +96,8 @@ export function niveau1(): LevelDef {
       g.startQuest('ballon');
     }
   };
-  b.npc({ id: 'malick', char: 'enfant_garcon', x: 30.7, y: 0, facing: 1, talk: enfants, wander: [29.4, 33.2] });
-  b.npc({ id: 'fanta', char: 'enfant_fille', x: 33.3, y: 0, facing: -1, talk: enfants, wander: [30.6, 34.2] });
+  b.npc({ id: 'malick', char: 'enfant_garcon', x: 30.7, y: 0, facing: 1, talk: enfants, wander: [28.6, 34.6], speed: 2.3 });
+  b.npc({ id: 'fanta', char: 'enfant_fille', x: 33.3, y: 0, facing: -1, talk: enfants, wander: [29.2, 35.2], speed: 2.1 });
 
   b.npc({
     id: 'marchande', char: 'porteuse', ghost: true, x: 46.9, y: 0, promptY: 3.0, reach: 1.6,
@@ -152,7 +152,7 @@ export function niveau1(): LevelDef {
     },
   });
   b.npc({
-    id: 'grue', char: 'grue', x: 109.4, y: 0, facing: -1, prompt: 'prompt.look', wander: [108.6, 112.4],
+    id: 'grue', char: 'grue', x: 109.4, y: 0, facing: -1, prompt: 'prompt.look', wander: [108.6, 112.4], speed: 0.6,
     talk: async (g) => {
       if (g.has('plumeGrue')) return g.say('narrateur', 'dlg.grue.2');
       await g.say('narrateur', 'dlg.grue.1');
