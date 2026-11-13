@@ -35,6 +35,13 @@ npm run build
 npm run preview
 ```
 
+Version à publier sous forme de lien claude.ai (Three.js chargé depuis le CDN jsDelivr, police
+depuis Google Fonts, page d’entrée sans en-tête HTML) dans `dist-lien/` :
+
+```bash
+npm run build:lien
+```
+
 Raccourcis utiles pendant le développement :
 
 - `?niveau=4` : démarre directement au niveau 4 ;
