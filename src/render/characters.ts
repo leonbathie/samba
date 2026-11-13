@@ -262,6 +262,16 @@ export interface ModelEntry {
   offsetY?: number;
   /** Correspondance pose du jeu -> nom de l'animation dans le fichier GLB. */
   animations?: Record<string, string>;
+  /**
+   * Centrer le modèle sur sa boîte englobante (défaut). À mettre à false si le fichier est
+   * déjà placé : origine au milieu des pieds, comme le sont les personnages générés par Blender.
+   */
+  centrer?: boolean;
+  /**
+   * Regarder à gauche : « miroir » retourne le personnage comme le fait l'image (défaut « pivot » :
+   * le modèle tourne sur lui-même, ce qui montre son autre côté).
+   */
+  retournement?: 'miroir' | 'pivot';
 }
 
 /** Catalogue des modèles 3D disponibles (public/assets/models/models.json). */
@@ -292,14 +302,18 @@ export class ModelRegistry {
     if (!entry?.file) return Promise.resolve(null);
     let p = this.cache.get(id);
     if (!p) {
+      // « data: » : modèle intégré au catalogue (version publiée en lien, sans fichiers séparés).
+      const integre = entry.file.startsWith('data:');
+      const url = integre ? entry.file : this.base + entry.file;
+      const nom = integre ? `${id} (intégré)` : entry.file;
       p = new Promise((resolve) => {
         this.loader.load(
-          this.base + entry.file,
+          url,
           (gltf) => resolve({ scene: gltf.scene, clips: gltf.animations }),
           undefined,
           () => {
-            this.errors.push(entry.file);
-            console.warn('[modèles] fichier GLB illisible : ' + entry.file + ' — la représentation provisoire est conservée.');
+            this.errors.push(nom);
+            console.warn('[modèles] fichier GLB illisible : ' + nom + ' — la représentation provisoire est conservée.');
             resolve(null);
           },
         );
@@ -312,7 +326,9 @@ export class ModelRegistry {
 
 /** Vrai modèle 3D animé (GLB). */
 class ModelRig {
+  /** Racine (sa position suit le personnage ; son échelle en x vaut -1 pour le retournement « miroir »). */
   readonly group = new THREE.Group();
+  private turn = new THREE.Group();
   private mixer: THREE.AnimationMixer;
   private actions = new Map<string, THREE.AnimationAction>();
   private active: THREE.AnimationAction | null = null;
@@ -326,10 +342,11 @@ class ModelRig {
     const scale = (entry.height ?? 1.7) / Math.max(0.001, size.y);
     model.scale.setScalar(scale);
     model.position.y = -box.min.y * scale + (entry.offsetY ?? 0);
-    model.position.x = -((box.min.x + box.max.x) / 2) * scale;
+    model.position.x = entry.centrer === false ? 0 : -((box.min.x + box.max.x) / 2) * scale;
     this.yaw = THREE.MathUtils.degToRad(entry.yaw ?? 90);
-    this.group.add(model);
-    this.group.rotation.y = this.yaw;
+    this.turn.rotation.y = this.yaw;
+    this.turn.add(model);
+    this.group.add(this.turn);
     this.mixer = new THREE.AnimationMixer(model);
     for (const clip of clips) this.actions.set(clip.name, this.mixer.clipAction(clip));
   }
@@ -345,7 +362,12 @@ class ModelRig {
   }
 
   setFacing(dir: number): void {
-    this.group.rotation.y = dir >= 0 ? this.yaw : this.yaw + Math.PI;
+    if (this.entry.retournement === 'miroir') {
+      // Comme l'image : le même côté reste face à la caméra, l'image est retournée.
+      this.group.scale.x = dir >= 0 ? 1 : -1;
+    } else {
+      this.turn.rotation.y = dir >= 0 ? this.yaw : this.yaw + Math.PI;
+    }
   }
 
   update(dt: number): void {

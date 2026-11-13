@@ -1,4 +1,21 @@
 {
-  "_lisez_moi": "Déclarez ici les modèles 3D (GLB) des personnages. Tant qu'un personnage n'a pas d'entrée, le jeu affiche sa représentation provisoire (image de référence). Voir docs/MODELES_3D.md.",
-  "characters": {}
+  "_lisez_moi": "Modèles 3D (GLB) des personnages. Tant qu'un personnage n'a pas d'entrée, le jeu affiche sa représentation provisoire (image de référence). femme_bleue et femme_rose : générés par tools/blender/personnages3d.py (origine au milieu des pieds, regard vers la droite, retournement en miroir). Voir docs/MODELES_3D.md.",
+  "characters": {
+    "femme_bleue": {
+      "file": "femme_bleue.glb",
+      "height": 1.85,
+      "yaw": 90,
+      "centrer": false,
+      "retournement": "miroir",
+      "animations": { "idle": "idle", "walk": "walk", "run": "run", "chat": "talk", "listen": "listen", "dance": "dance" }
+    },
+    "femme_rose": {
+      "file": "femme_rose.glb",
+      "height": 2.0,
+      "yaw": 90,
+      "centrer": false,
+      "retournement": "miroir",
+      "animations": { "idle": "idle", "walk": "walk", "run": "run", "chat": "talk", "listen": "listen", "dance": "dance" }
+    }
+  }
 }
