@@ -8,6 +8,24 @@ import { resolve } from 'node:path';
  *    chargé depuis un CDN autorisé (carte d'imports) et la police depuis Google Fonts.
  */
 export default defineConfig(({ mode }) => {
+  if (mode === 'studio') {
+    // Studio des mouvements publié en lien : même principe que le jeu (Three.js depuis le CDN).
+    return {
+      base: './',
+      // Les images utiles sont copiées une à une par tools/studio/build.mjs.
+      publicDir: false,
+      build: {
+        target: 'es2021',
+        outDir: 'dist-studio',
+        emptyOutDir: true,
+        rollupOptions: {
+          input: resolve(__dirname, 'src/studio/main.ts'),
+          external: ['three', /^three\/examples\/jsm\//],
+          output: { format: 'es', entryFileNames: 'assets/studio.js', assetFileNames: 'assets/studio[extname]' },
+        },
+      },
+    };
+  }
   if (mode === 'artifact') {
     return {
       base: './',

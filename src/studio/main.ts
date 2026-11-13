@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import './studio.css';
 import { Assets } from '../core/Assets';
 import { CharacterView, type CharacterDef, type PoseDef } from '../render/characters';
-import { ContactShadow } from '../render/sprites';
+import { ContactShadow, makeSprite, stoolTexture } from '../render/sprites';
 import {
   type BodyProfile, DEFAULT_BODY, MOTION_LABELS, type MotionAction, type MotionParams, resolveMotion,
 } from '../render/motion';
@@ -346,11 +346,25 @@ function poseGeometry(): { w: number; h: number; ax: number } {
   return { w: hh * (info.w / info.h), h: hh, ax: p.ax ?? info.fx ?? 0.5 };
 }
 
+let stool: THREE.Mesh | null = null;
+
 function rebuildView(): void {
   view?.dispose();
   view = new CharacterView(assets, state.entry.def);
   view.setPose(state.entry.pose(state.action));
   scene.add(view.root);
+  if (stool) {
+    stool.removeFromParent();
+    (stool.material as THREE.Material).dispose();
+    stool = null;
+  }
+  const seat = state.entry.def.seat;
+  if (seat) {
+    // Comme dans le jeu : un tabouret sous les personnages assis.
+    const g = poseGeometry();
+    stool = makeSprite(stoolTexture(), (seat.x1 - seat.x0) * g.w, seat.top * g.h, { bottom: true });
+    scene.add(stool);
+  }
   applyMotion(true);
 }
 
@@ -567,6 +581,11 @@ function frame(now: number): void {
   view.setFacing(sim.dir);
   view.update(dt, { vx: speed, vy: 0, moving: Math.abs(speed) > 0.05 });
   view.root.position.set(sim.x, 0, 0);
+  const seat = state.entry.def.seat;
+  if (stool && seat) {
+    const gs = poseGeometry();
+    stool.position.set(sim.x + sim.dir * ((seat.x0 + seat.x1) / 2 - gs.ax) * gs.w, -0.02, -0.012);
+  }
   const g = poseGeometry();
   shadow.mesh.scale.x = g.w * 0.5;
   shadow.set(sim.x, 0, -0.01);
