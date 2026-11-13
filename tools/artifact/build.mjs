@@ -4,11 +4,26 @@
  * construction Vite en mode « artifact », puis page d'entrée sans en-tête HTML (l'hébergeur l'ajoute).
  */
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, readdirSync, statSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 execFileSync('npx', ['vite', 'build', '--mode', 'artifact'], { stdio: 'inherit' });
 copyFileSync('tools/artifact/page.html', 'dist-lien/index.html');
+
+// La publication en lien ne sert pas les fichiers GLB : chaque modèle est intégré au catalogue
+// (data: en base64) puis son fichier est retiré de la version publiée.
+const catalogue = 'dist-lien/assets/models/models.json';
+if (existsSync(catalogue)) {
+  const doc = JSON.parse(readFileSync(catalogue, 'utf8'));
+  for (const entree of Object.values(doc.characters ?? {})) {
+    if (!entree.file?.endsWith('.glb')) continue;
+    const chemin = join('dist-lien/assets/models', entree.file);
+    if (!existsSync(chemin)) continue;
+    entree.file = 'data:model/gltf-binary;base64,' + readFileSync(chemin).toString('base64');
+    unlinkSync(chemin);
+  }
+  writeFileSync(catalogue, JSON.stringify(doc));
+}
 
 const files = [];
 const walk = (dir) => {

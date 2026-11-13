@@ -68,9 +68,12 @@ pierre (en vol et seules), gourde, bouclier, plume, parchemin, lanterne.
 
 ## Ce qui est provisoire
 
-- **Tous les personnages et animaux** : images plates découpées dans les planches, animées par
-  déformation (respiration, course, balancement). Chaque personnage n’a que les poses dessinées
-  dans le pack (Ousmane en a 17) ; il n’y a pas d’animation image par image.
+- **Tous les personnages et animaux sauf les deux villageoises** : images plates découpées dans les
+  planches, animées par déformation (respiration, course, balancement). Chaque personnage n’a que les
+  poses dessinées dans le pack (Ousmane en a 17) ; il n’y a pas d’animation image par image.
+- **Tata Dieynaba et Tata Salimata** (`femme_bleue`, `femme_rose`) sont en 3D, construites par
+  `tools/blender/personnages3d.py` à partir de leur image : volumes, squelette, sandales, six animations.
+  Ce sont des volumes extrapolés d’un dessin (voir `docs/MODELES_3D.md`, section 0), pas des sculptures.
 - **Les habitants des intérieurs** (Maman, Tante Dado, Mame Awa, le vieux Demba) font partie des
   tableaux peints : ils ne bougent pas.
 - **Les décors** : plateformes et accessoires sont des images posées dans la scène 3D (effet de
@@ -84,6 +87,6 @@ pierre (en vol et seules), gourde, bouclier, plume, parchemin, lanterne.
 | Ousmane | modèle texturé et articulé, fidèle aux planches (peau foncée, cheveux noirs bouclés, bonnet à motifs, tunique claire à bordures bleues et orange, longue écharpe jaune, sacoche en cuir, pantalon beige, baskets foncées), et ses 18 animations (liste dans `MODELES_3D.md`) |
 | Coumba | modèle + 4 animations |
 | 5 animaux ennemis | modèles + 5 à 6 animations chacun |
-| ~23 habitants | modèles + attente et danse |
+| 21 habitants (Tata Dieynaba et Tata Salimata sont faites) | modèles + attente et danse |
 | Intérieurs | 3 cases et le temple en 3D (ou tableaux repeints sans personnages) |
 | Décors | baobabs, acacias, cases, plateformes, pirogues… (facultatif : les images actuelles fonctionnent) |

@@ -6,6 +6,43 @@ découpée dans les planches de référence, animée par le code (respiration, b
 modèle 3D est déclaré pour un personnage, il remplace automatiquement l’image, avec ses animations,
 sans toucher au code du jeu.
 
+## 0. Déjà en 3D : Tata Dieynaba et Tata Salimata
+
+Les deux villageoises `femme_bleue` (Tata Dieynaba) et `femme_rose` (Tata Salimata) ne sont plus des
+images : elles sont générées par `tools/blender/personnages3d.py` et déclarées dans
+`public/assets/models/models.json`. Le script les construit à partir de leurs images de référence :
+
+- le corps, la tête, la robe et les bras sont des **volumes** dont la silhouette est celle de l’image ;
+  l’image est projetée sur la face qui regarde la caméra, donc le repos reproduit le dessin (recouvrement
+  des silhouettes d’environ 98 %) ;
+- les **pieds** (sandales et chevilles) sont ajoutés sous l’ourlet, que l’image ne montre pas ;
+- un **squelette** de 17 os commande l’ensemble ; les jambes sont résolues en cinématique inverse, si
+  bien que les pieds restent posés pendant l’appui ;
+- six animations sont cuites image par image : `idle`, `walk`, `run`, `talk`, `listen`, `dance` ;
+- l’export produit un fichier GLB par personnage (environ 0,75 Mo chacun).
+
+Pour régénérer les fichiers (il faut le module Python `bpy` de Blender, testé avec la version 5.2 LTS) :
+
+```bash
+pip install "bpy==5.2.4"
+python tools/blender/personnages3d.py --personnage tous --sortie public/assets/models
+```
+
+Contrôle visuel sans écrire les fichiers : `--apercu DOSSIER` produit la superposition de la silhouette
+sur l’image, une planche des animations (rendu, hauteur des semelles à chaque instant clé).
+
+Les positions (colonnes et lignes des épaules, des coudes, des poignets, des chevilles) sont relevées
+dans le haut du fichier, `PERSONNAGES`. Pour une nouvelle villageoise, relever ces points sur son image,
+ajouter une entrée, puis lancer le script. Le catalogue accepte deux options utiles :
+
+- `"centrer": false` : l’origine du fichier est déjà au milieu des pieds (c’est le cas ici) ;
+- `"retournement": "miroir"` : pour regarder à gauche, le personnage est retourné comme l’image
+  (sans montrer son autre côté, qui n’est pas dessiné). Le défaut `"pivot"` tourne le modèle sur lui-même.
+
+Limites honnêtes : ce sont des volumes construits à partir d’un dessin, pas des sculptures d’artiste.
+Le côté visible reprend le dessin ; le dos et les côtés sont une extrapolation. Un modèle sculpté à la main
+(ou généré par une image vers 3D) donnera un meilleur résultat et se déposera au même endroit.
+
 ## 1. Préparer le modèle dans Blender
 
 - Un fichier par personnage, personnage **seul** dans la scène (avec son armature).

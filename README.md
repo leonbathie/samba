@@ -5,10 +5,11 @@ inspiré de l’Afrique de l’Ouest. Ousmane, un jeune garçon courageux et cur
 grimpe au sommet du grand baobab, longe une rivière aux cascades, parcourt la savane avec son amie
 Coumba, explore la mangrove et découvre un temple caché derrière une cascade.
 
-> **Version jouable avec personnages provisoires.** Aucun modèle 3D n’était fourni : les personnages,
-> les animaux et une partie des décors sont des **images découpées dans les planches de référence**,
-> animées par le code. Ce ne sont pas des modèles 3D. Le code est prêt à les remplacer par de vrais
-> modèles GLB sans modification (voir [docs/MODELES_3D.md](docs/MODELES_3D.md)).
+> **Version jouable avec personnages provisoires.** Aucun modèle 3D n’était fourni : la plupart des
+> personnages, les animaux et une partie des décors sont des **images découpées dans les planches de
+> référence**, animées par le code. Seules **Tata Dieynaba et Tata Salimata** sont en 3D (GLB construits
+> avec Blender à partir de leur image). Le code est prêt à remplacer le reste par de vrais modèles GLB
+> sans modification (voir [docs/MODELES_3D.md](docs/MODELES_3D.md)).
 
 ## Lancer le jeu
 
@@ -90,6 +91,10 @@ touches se **réaffectent** dans les paramètres. Un tutoriel s’affiche au fil
 - **Sauvegarde locale** automatique de la progression et des paramètres (« Continuer » sur l’écran d’accueil).
 - **Interface** : accueil (Jouer, Continuer, Niveaux, Paramètres), affichage du héros, des cœurs, des pièces, du score, de l’objet équipé et des munitions, du niveau et de la mission ; pause ; paramètres (langue, musique et effets séparés avec volume, commandes tactiles, disposition du clavier, touches) ; écrans de fin de niveau et de fin d’aventure.
 - **Langues** : français et anglais ; le pulaar est prévu (fichier `src/i18n/ff.ts`) sans traduction inventée.
+- **Tata Dieynaba et Tata Salimata sont en 3D** : modèles GLB construits avec Blender à partir de leurs
+  images de référence (`tools/blender/personnages3d.py`, voir [docs/MODELES_3D.md](docs/MODELES_3D.md)) :
+  squelette, sandales qui touchent le sol, six animations (repos, marche, course, parole, écoute, danse).
+  Les autres habitants et les animaux restent des images animées, décrites ci-dessous.
 - **Mouvements** : faute de vraies animations, chaque image est posée sur une grille souple que le
   processeur graphique déforme par zones (`src/render/motion.ts`). Les pieds restent plantés au sol ;
   les jambes ou la robe se balancent en ciseaux, le corps rebondit au-dessus des genoux, les hanches,
@@ -119,6 +124,7 @@ src/
   ui/Ui.ts             affichage en jeu, dialogues, menus, commandes tactiles
 public/assets/         images du jeu (WebP) + manifest.json + models/ (modèles 3D à venir)
 tools/assets/          fabrication des images à partir du pack de référence
+tools/blender/         génération des personnages 3D (Blender, module bpy) : personnages3d.py
 tests/                 tests unitaires (Vitest) et de bout en bout (Playwright)
 ```
 
