@@ -342,6 +342,21 @@ async function main() {
     assert(s.invuln > 0.5, 'pas de protection temporaire après la blessure');
   });
 
+  await scenario('Défaite : plus de cœur, retour au point de sauvegarde avec trois cœurs', page, async () => {
+    await page.waitForTimeout(1800);
+    await T.run(() => (window.__ousmane.game.progress.hearts = 1));
+    await T.run(() => {
+      const st = window.__ousmane.game.stage;
+      const p = st.player;
+      p.invuln = 0;
+      st.spawnProjectile({ kind: 'stone', owner: 'enemy', x: p.x + 1.2, y: p.y + 0.8, vx: -6, vy: 0, grav: 0 });
+    });
+    await page.waitForSelector('text=Ousmane reprend son souffle', { timeout: 4000 });
+    assert(await T.waitFor(() => window.__ousmane.game.mode === 'play' && window.__ousmane.game.progress.hearts === 3, 8000), 'le héros ne repart pas avec ses cœurs');
+    const s = await T.st();
+    assert(Math.abs(s.x - 64.6) < 1, 'retour ailleurs qu’au point de sauvegarde : ' + s.x.toFixed(2));
+  });
+
   await scenario('Lancer des pierres : le serpent s’enfuit', page, async () => {
     await T.run(() => {
       const g = window.__ousmane.game;
