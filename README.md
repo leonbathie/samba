@@ -42,6 +42,13 @@ depuis Google Fonts, page d’entrée sans en-tête HTML) dans `dist-lien/` :
 npm run build:lien
 ```
 
+Studio des mouvements (page pour régler et montrer comment chaque personnage bouge) : en développement,
+ouvrir http://localhost:5173/studio.html ; version à publier en lien dans `dist-studio/` :
+
+```bash
+npm run build:studio
+```
+
 Raccourcis utiles pendant le développement :
 
 - `?niveau=4` : démarre directement au niveau 4 ;
@@ -83,6 +90,14 @@ touches se **réaffectent** dans les paramètres. Un tutoriel s’affiche au fil
 - **Sauvegarde locale** automatique de la progression et des paramètres (« Continuer » sur l’écran d’accueil).
 - **Interface** : accueil (Jouer, Continuer, Niveaux, Paramètres), affichage du héros, des cœurs, des pièces, du score, de l’objet équipé et des munitions, du niveau et de la mission ; pause ; paramètres (langue, musique et effets séparés avec volume, commandes tactiles, disposition du clavier, touches) ; écrans de fin de niveau et de fin d’aventure.
 - **Langues** : français et anglais ; le pulaar est prévu (fichier `src/i18n/ff.ts`) sans traduction inventée.
+- **Mouvements** : faute de vraies animations, chaque image est posée sur une grille souple que le
+  processeur graphique déforme par zones (`src/render/motion.ts`). Les pieds restent plantés au sol ;
+  les jambes ou la robe se balancent en ciseaux, le corps rebondit au-dessus des genoux, les hanches,
+  les épaules et la tête bougent, les mains gesticulent. Les habitants bavardent chacun leur tour, les
+  enfants courent, les musiciens jouent, la grand-mère applaudit, la cuisinière remue sa marmite.
+  Les zones du corps (genoux, jambes, mains) et les réglages de chaque personnage sont dans
+  `src/game/characterDefs.ts` ; le **studio des mouvements** permet de les régler à l'œil et d'envoyer
+  le résultat (il est rangé dans la base de données de la page, que Claude relit).
 - **Sons** : musiques originales et bruitages **entièrement synthétisés** par le code (balafon, kora, djembé, cloche…), ambiances (eau, cascade, oiseaux, vent, village, nuit, grotte, fête). Aucun fichier sonore externe.
 
 ## Organisation du code
