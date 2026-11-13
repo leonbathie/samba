@@ -1,10 +1,14 @@
 /**
  * Application : démarrage, chargement, boucle de jeu à pas fixe, pause et menus.
  */
-import '@fontsource/baloo-2/500.css';
-import '@fontsource/baloo-2/600.css';
-import '@fontsource/baloo-2/700.css';
-import '@fontsource/baloo-2/800.css';
+// Police Baloo 2 (licence SIL OFL) : alphabet latin, et latin étendu pour le pulaar à venir (ɓ, ɗ, ŋ, ƴ).
+import '@fontsource/baloo-2/latin-500.css';
+import '@fontsource/baloo-2/latin-600.css';
+import '@fontsource/baloo-2/latin-700.css';
+import '@fontsource/baloo-2/latin-800.css';
+import '@fontsource/baloo-2/latin-ext-500.css';
+import '@fontsource/baloo-2/latin-ext-700.css';
+import '@fontsource/baloo-2/latin-ext-800.css';
 import { View } from './render/View';
 import { Assets } from './core/Assets';
 import { AudioEngine } from './core/Audio';

@@ -45,6 +45,62 @@ async function startServer() {
   throw new Error('le serveur Vite ne répond pas');
 }
 
+/**
+ * Petit modèle GLB fabriqué à la volée (une boîte de 1,6 de haut avec deux animations) :
+ * il sert à vérifier que le jeu remplace bien la représentation provisoire par un modèle 3D.
+ */
+function makeTestGlb() {
+  const pos = new Float32Array([
+    -0.3, 0, -0.2, 0.3, 0, -0.2, 0.3, 1.6, -0.2, -0.3, 1.6, -0.2,
+    -0.3, 0, 0.2, 0.3, 0, 0.2, 0.3, 1.6, 0.2, -0.3, 1.6, 0.2,
+  ]);
+  const idx = new Uint16Array([4, 5, 6, 4, 6, 7, 1, 0, 3, 1, 3, 2, 0, 4, 7, 0, 7, 3, 5, 1, 2, 5, 2, 6, 7, 6, 2, 7, 2, 3, 0, 1, 5, 0, 5, 4]);
+  const times = new Float32Array([0, 1]);
+  const rots = new Float32Array([0, 0, 0, 1, 0, 0.7071, 0, 0.7071]);
+  const bin = Buffer.concat([Buffer.from(pos.buffer), Buffer.from(idx.buffer), Buffer.from(times.buffer), Buffer.from(rots.buffer)]);
+  const anim = (name) => ({
+    name,
+    channels: [{ sampler: 0, target: { node: 0, path: 'rotation' } }],
+    samplers: [{ input: 2, output: 3, interpolation: 'LINEAR' }],
+  });
+  const json = {
+    asset: { version: '2.0', generator: 'test Ousmane' },
+    scene: 0,
+    scenes: [{ nodes: [0] }],
+    nodes: [{ name: 'Corps', mesh: 0 }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 }, indices: 1, material: 0 }] }],
+    materials: [{ pbrMetallicRoughness: { baseColorFactor: [0.9, 0.6, 0.2, 1], metallicFactor: 0, roughnessFactor: 0.8 } }],
+    buffers: [{ byteLength: bin.length }],
+    bufferViews: [
+      { buffer: 0, byteOffset: 0, byteLength: 96, target: 34962 },
+      { buffer: 0, byteOffset: 96, byteLength: 72, target: 34963 },
+      { buffer: 0, byteOffset: 168, byteLength: 8 },
+      { buffer: 0, byteOffset: 176, byteLength: 32 },
+    ],
+    accessors: [
+      { bufferView: 0, componentType: 5126, count: 8, type: 'VEC3', min: [-0.3, 0, -0.2], max: [0.3, 1.6, 0.2] },
+      { bufferView: 1, componentType: 5123, count: 36, type: 'SCALAR' },
+      { bufferView: 2, componentType: 5126, count: 2, type: 'SCALAR', min: [0], max: [1] },
+      { bufferView: 3, componentType: 5126, count: 2, type: 'VEC4' },
+    ],
+    animations: [anim('repos'), anim('course')],
+  };
+  let jsonBuf = Buffer.from(JSON.stringify(json));
+  if (jsonBuf.length % 4) jsonBuf = Buffer.concat([jsonBuf, Buffer.alloc(4 - (jsonBuf.length % 4), 0x20)]);
+  const binBuf = bin.length % 4 ? Buffer.concat([bin, Buffer.alloc(4 - (bin.length % 4))]) : bin;
+  const header = Buffer.alloc(12);
+  header.writeUInt32LE(0x46546c67, 0);
+  header.writeUInt32LE(2, 4);
+  header.writeUInt32LE(12 + 8 + jsonBuf.length + 8 + binBuf.length, 8);
+  const chunk = (buf, type) => {
+    const h = Buffer.alloc(8);
+    h.writeUInt32LE(buf.length, 0);
+    h.writeUInt32LE(type, 4);
+    return Buffer.concat([h, buf]);
+  };
+  return Buffer.concat([header, chunk(jsonBuf, 0x4e4f534a), chunk(binBuf, 0x004e4942)]);
+}
+
 const results = [];
 const GL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
 
@@ -395,6 +451,46 @@ async function main() {
     assert(await T.waitFor(() => window.__ousmane.game.has('templeOuvert'), 3000), 'l’énigme n’est pas résolue');
     assert(await T.run(() => !window.__ousmane.game.stage.solids.some((s) => s.off)), 'les pierres ne sont pas apparues');
   });
+
+
+  // ------------------------------------------------------------------ modèles 3D et ressources manquantes
+  const ctx3d = await browser.newContext({ viewport: { width: 960, height: 540 }, locale: 'fr-FR' });
+  const p3 = await ctx3d.newPage();
+  p3.on('pageerror', (e) => errors.push(e.message));
+  const D = tools(p3);
+  await p3.route('**/assets/models/essai.json', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ characters: { hero: { file: 'essai-heros.glb', height: 1.7, yaw: 90, animations: { idle: 'repos', run: 'course' } } } }),
+    }));
+  await p3.route('**/assets/models/essai-heros.glb', (route) => route.fulfill({ contentType: 'model/gltf-binary', body: makeTestGlb() }));
+  await p3.route('**/assets/npc/femme_rose.webp', (route) => route.fulfill({ status: 404, body: '' }));
+  await p3.goto(base + '?niveau=1&modeles=essai.json');
+  await scenario('Modèle 3D : un fichier GLB déclaré remplace le héros provisoire', p3, async () => {
+    assert(await D.playing(), 'la partie ne démarre pas');
+    assert(await D.waitFor(() => !window.__ousmane.game.stage.player.view.isPlaceholder, 10000), 'le modèle GLB n’a pas remplacé l’image provisoire');
+    const info = await D.run(() => {
+      const v = window.__ousmane.game.stage.player.view;
+      let meshes = 0;
+      v.root.traverse((o) => { if (o.isMesh && o.visible && o.geometry.attributes.position.count === 8) meshes++; });
+      return { meshes, pose: v.pose };
+    });
+    assert(info.meshes === 1, 'le maillage du modèle n’est pas affiché');
+    await p3.keyboard.down('ArrowRight');
+    await D.waitFor(() => window.__ousmane.game.stage.player.view.pose === 'run', 3000);
+    await p3.keyboard.up('ArrowRight');
+  });
+
+  await scenario('Ressource manquante : le jeu le signale et reste jouable', p3, async () => {
+    const missing = await D.run(() => window.__ousmane.assets.missing);
+    assert(missing.includes('npc/femme_rose'), 'l’image manquante n’est pas détectée : ' + JSON.stringify(missing));
+    const x0 = (await D.st()).x;
+    await p3.keyboard.down('ArrowLeft');
+    const ok = await D.waitFor((x) => Math.abs(window.__ousmane.game.stage.player.x - x) > 1, 4000, x0);
+    await p3.keyboard.up('ArrowLeft');
+    assert(ok, 'le jeu ne répond plus après la ressource manquante');
+  });
+  await ctx3d.close();
 
   // ------------------------------------------------------------------ téléphone (tactile)
   const phone = await browser.newContext({ viewport: { width: 844, height: 390 }, locale: 'fr-FR', hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
